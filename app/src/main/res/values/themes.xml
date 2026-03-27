@@ -1,0 +1,19 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Base.Theme.MoneyTrack" parent="Theme.Material3.DayNight.NoActionBar">
+
+        <!-- Primary Green -->
+        <item name="colorPrimary">#2E7D32</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+
+        <!-- Secondary -->
+        <item name="colorSecondary">#66BB6A</item>
+
+        <!-- Background -->
+        <item name="android:colorBackground">#F1F8F4</item>
+
+    </style>
+
+    <style name="Theme.MoneyTrack" parent="Base.Theme.MoneyTrack" />
+
+</resources>

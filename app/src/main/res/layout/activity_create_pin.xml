@@ -1,0 +1,24 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <EditText
+        android:id="@+id/pinEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter PIN"
+        android:inputType="numberPassword"
+        android:maxLength="4"/>
+
+    <Button
+        android:id="@+id/savePinButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save PIN"
+        android:layout_marginTop="16dp"/>
+
+</LinearLayout>
