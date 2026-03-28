@@ -327,7 +327,6 @@ public class MainActivity extends AppCompatActivity {
 
             try {
                 String number = matcher.group();
-
                 number = number.replace(" ", "");
                 number = number.replace(",", ".");
 
