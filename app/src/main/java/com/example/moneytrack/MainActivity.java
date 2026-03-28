@@ -9,6 +9,9 @@ import android.speech.RecognizerIntent;
 import android.view.View;
 import android.widget.*;
 
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
@@ -63,7 +66,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 1. Միացնում ենք View-երը
         tvBalance = findViewById(R.id.tvBalance);
         btnIncome = findViewById(R.id.btnIncome);
         btnExpense = findViewById(R.id.btnExpense);
@@ -71,13 +73,11 @@ public class MainActivity extends AppCompatActivity {
         btnVoice = findViewById(R.id.btnVoice);
         btnScan = findViewById(R.id.btnScan);
 
-        // 2. Տվյալների բազայի նախապատրաստում
         database = AppDatabase.getInstance(this);
         transactionDao = database.transactionDao();
 
         calculateAndUpdateBalance();
 
-        // 3. Կոճակների Click Listener-ներ
         if (btnIncome != null) btnIncome.setOnClickListener(v -> showAmountDialog("income"));
         if (btnExpense != null) btnExpense.setOnClickListener(v -> showAmountDialog("expense"));
 
@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (btnVoice != null) btnVoice.setOnClickListener(v -> startVoiceInput());
 
-        // 4. Bottom Navigation (Այստեղ է հիմնականում լինում սխալը)
+        // Bottom Navigation
         View navView = findViewById(R.id.bottomNav);
         if (navView instanceof BottomNavigationView) {
             BottomNavigationView bottomNav = (BottomNavigationView) navView;
@@ -114,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // 5. Scan Button
+        //  Scan Button
         if (btnScan != null) {
             btnScan.setOnClickListener(v -> {
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -318,15 +318,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void extractAmount(String text) {
-
         double amount = 0;
 
-        for (String word : text.split("\\s+")) {
+        Pattern pattern = Pattern.compile("(\\d+[\\s.,]?\\d+)+");
+        Matcher matcher = pattern.matcher(text);
+
+        while (matcher.find()) {
 
             try {
-                double value = Double.parseDouble(
-                        word.replace(",", "").replace("֏", "").replace("$", "")
-                );
+                String number = matcher.group();
+
+                // ջնջում ենք space-երը → "2 560" → "2560"
+                number = number.replace(" ", "");
+
+                // փոխում ենք ստորակետը կետի
+                number = number.replace(",", ".");
+
+                double value = Double.parseDouble(number);
 
                 if (value > amount) amount = value;
 
