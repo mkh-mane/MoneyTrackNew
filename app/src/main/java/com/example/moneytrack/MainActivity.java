@@ -328,10 +328,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 String number = matcher.group();
 
-                // ջնջում ենք space-երը → "2 560" → "2560"
                 number = number.replace(" ", "");
-
-                // փոխում ենք ստորակետը կետի
                 number = number.replace(",", ".");
 
                 double value = Double.parseDouble(number);

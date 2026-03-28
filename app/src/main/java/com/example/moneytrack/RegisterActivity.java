@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    private EditText email, password;
+    private EditText email, password, etConfirmPassword;
     private Button registerButton;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
@@ -33,6 +33,7 @@ public class RegisterActivity extends AppCompatActivity {
         email = findViewById(R.id.registerEmail);
         password = findViewById(R.id.registerPassword);
         registerButton = findViewById(R.id.registerButton);
+        etConfirmPassword = findViewById(R.id.etConfirmPassword);
 
         registerButton.setOnClickListener(v -> registerUser());
     }
@@ -41,6 +42,7 @@ public class RegisterActivity extends AppCompatActivity {
 
         String userEmail = email.getText().toString().trim();
         String userPassword = password.getText().toString().trim();
+        String confirmPassword = etConfirmPassword.getText().toString().trim();
 
         if (TextUtils.isEmpty(userEmail)) {
             email.setError("Enter email");
@@ -49,6 +51,16 @@ public class RegisterActivity extends AppCompatActivity {
 
         if (TextUtils.isEmpty(userPassword)) {
             password.setError("Enter password");
+            return;
+        }
+
+        if (TextUtils.isEmpty(confirmPassword)) {
+            etConfirmPassword.setError("Confirm your password");
+            return;
+        }
+
+        if (!userPassword.equals(confirmPassword)) {
+            Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
             return;
         }
 
