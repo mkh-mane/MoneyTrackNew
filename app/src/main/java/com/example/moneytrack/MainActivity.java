@@ -18,6 +18,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.TextRecognition;
@@ -78,8 +79,8 @@ public class MainActivity extends AppCompatActivity {
 
         calculateAndUpdateBalance();
 
-        if (btnIncome != null) btnIncome.setOnClickListener(v -> showAmountDialog("income"));
-        if (btnExpense != null) btnExpense.setOnClickListener(v -> showAmountDialog("expense"));
+        btnIncome.setOnClickListener(v -> showIncomeDialog());
+        btnExpense.setOnClickListener(v -> showExpenseDialog());
 
         if (btnHistory != null) {
             btnHistory.setOnClickListener(v ->
@@ -127,83 +128,123 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void showAmountDialog(String type) {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Add Transaction");
 
-        View view = getLayoutInflater().inflate(R.layout.dialog_add_transaction, null);
-        builder.setView(view);
 
-        EditText etAmount = view.findViewById(R.id.etAmount);
-        Spinner spinnerCategory = view.findViewById(R.id.spinnerCategory);
-        EditText etCustomCategory = view.findViewById(R.id.etCustomCategory);
+    private void showIncomeDialog() {
+        View view = getLayoutInflater().inflate(R.layout.dialog_income, null);
+//        AlertDialog dialog = new AlertDialog.Builder(this)
+//                .setView(view)
+//                .create();
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        dialog.setContentView(view);
 
-        String[] categories = {"Food", "Transport", "Salary", "Shopping", "Other"};
+        EditText etAmount = view.findViewById(R.id.etAmountIncome);
+        Button btnSave = view.findViewById(R.id.btnSaveIncome);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                categories
-        );
-
-        spinnerCategory.setAdapter(adapter);
-
-        spinnerCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view1, int position, long id) {
-                if (categories[position].equals("Other")) {
-                    etCustomCategory.setVisibility(View.VISIBLE);
-                } else {
-                    etCustomCategory.setVisibility(View.GONE);
-                }
+        btnSave.setOnClickListener(v -> {
+            String value = etAmount.getText().toString().trim();
+            if (!value.isEmpty()) {
+                double amount = Double.parseDouble(value);
+                new Thread(() -> {
+                    transactionDao.insert(new TransactionEntity(
+                            amount,
+                            "Income",
+                            "INCOME",
+                            System.currentTimeMillis(),
+                            ""
+                    ));
+                    runOnUiThread(this::calculateAndUpdateBalance);
+                }).start();
+                dialog.dismiss();
             }
+        });
+        dialog.show();
+    }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+
+    private void showExpenseDialog() {
+        View view = getLayoutInflater().inflate(R.layout.dialog_expense, null);
+
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        dialog.setContentView(view);
+
+        EditText etAmount = view.findViewById(R.id.etAmountExpense);
+        Button btnSave = view.findViewById(R.id.btnSaveExpense);
+
+        // ✅ CATEGORY
+        final String[] selectedCategory = {"Other"};
+
+        LinearLayout catFood = view.findViewById(R.id.catFood);
+        LinearLayout catTransport = view.findViewById(R.id.catTransport);
+        LinearLayout catShopping = view.findViewById(R.id.catShopping);
+        LinearLayout catAdd = view.findViewById(R.id.catAdd);
+
+        View[] allCats = {catFood, catTransport, catShopping};
+
+        catFood.setOnClickListener(v -> {
+            selectedCategory[0] = "Food";
+            highlightSelected(catFood, allCats);
         });
 
-        builder.setPositiveButton("OK", (dialog, which) -> {
+        catTransport.setOnClickListener(v -> {
+            selectedCategory[0] = "Transport";
+            highlightSelected(catTransport, allCats);
+        });
 
+        catShopping.setOnClickListener(v -> {
+            selectedCategory[0] = "Shopping";
+            highlightSelected(catShopping, allCats);
+        });
+
+        // ➕ Custom category
+        catAdd.setOnClickListener(v -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("New Category");
+
+            final EditText input = new EditText(this);
+            input.setHint("Enter category name");
+            builder.setView(input);
+
+            builder.setPositiveButton("Add", (d, which) -> {
+                String newCategory = input.getText().toString().trim();
+                if (!newCategory.isEmpty()) {
+                    selectedCategory[0] = newCategory;
+                    Toast.makeText(this, "Selected: " + newCategory, Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            builder.setNegativeButton("Cancel", null);
+            builder.show();
+        });
+
+        // 💾 SAVE
+        btnSave.setOnClickListener(v -> {
             String value = etAmount.getText().toString().trim();
 
             if (!value.isEmpty()) {
-
                 double amount = Double.parseDouble(value);
 
-                String selectedCategory;
-
-                if (spinnerCategory.getSelectedItem().toString().equals("Other")) {
-                    selectedCategory = etCustomCategory.getText().toString().trim();
-
-                    if (selectedCategory.isEmpty()) selectedCategory = "Other";
-
-                } else {
-                    selectedCategory = spinnerCategory.getSelectedItem().toString();
-                }
-
-                String finalSelectedCategory = selectedCategory;
-
                 new Thread(() -> {
-
-                    TransactionEntity transaction = new TransactionEntity(
+                    transactionDao.insert(new TransactionEntity(
                             amount,
-                            finalSelectedCategory,
-                            type.toUpperCase(),
+                            selectedCategory[0],   // ✅ category
+                            "EXPENSE",             // ✅ type
                             System.currentTimeMillis(),
                             ""
-                    );
-
-                    transactionDao.insert(transaction);
+                    ));
 
                     runOnUiThread(this::calculateAndUpdateBalance);
 
                 }).start();
+
+                dialog.dismiss();
+            } else {
+                Toast.makeText(this, "Enter amount", Toast.LENGTH_SHORT).show();
             }
         });
 
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
-        builder.show();
+        dialog.show();
     }
 
     private void calculateAndUpdateBalance() {
@@ -226,6 +267,13 @@ public class MainActivity extends AppCompatActivity {
             );
 
         }).start();
+    }
+
+    private void highlightSelected(View selected, View[] all) {
+        for (View v : all) {
+            v.setBackgroundResource(android.R.color.transparent);
+        }
+        selected.setBackgroundResource(R.drawable.selected_circle);
     }
 
    //voice

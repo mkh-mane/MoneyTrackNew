@@ -1,0 +1,190 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:text="Add Expense"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Category"
+        android:textStyle="bold"
+        android:layout_marginTop="10dp"/>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:id="@+id/categoryContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <!-- Food -->
+            <LinearLayout
+                android:id="@+id/catFood"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp">
+
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/ic_food"
+                    android:background="@drawable/bg_circle"/>
+
+                <TextView
+                    android:text="Food"
+                    android:textSize="12sp"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"/>
+            </LinearLayout>
+
+            <!-- Transport -->
+            <LinearLayout
+                android:id="@+id/catTransport"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp">
+
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/ic_transport"
+                    android:background="@drawable/bg_circle"/>
+
+                <TextView
+                    android:text="Transport"
+                    android:textSize="12sp"
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"/>
+            </LinearLayout>
+
+            <!-- Shopping -->
+            <LinearLayout
+                android:id="@+id/catShopping"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp">
+
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/ic_shopping"
+                    android:background="@drawable/bg_circle"/>
+
+                <TextView
+                    android:text="Shopping"
+                    android:textSize="12sp"
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/catAdd"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@android:drawable/ic_input_add"
+                    android:background="@drawable/bg_circle"/>
+
+                <TextView
+                    android:text="Add"
+                    android:textSize="12sp"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Amount -->
+    <EditText
+        android:id="@+id/etAmountExpense"
+        android:hint="Enter amount"
+        android:inputType="numberDecimal"
+        android:layout_marginTop="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+<!--    &lt;!&ndash; Category &ndash;&gt;-->
+<!--    <GridLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:columnCount="4"-->
+<!--        android:layout_marginTop="16dp">-->
+
+<!--        &lt;!&ndash; Food &ndash;&gt;-->
+<!--        <LinearLayout-->
+<!--            android:orientation="vertical"-->
+<!--            android:gravity="center"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:padding="8dp">-->
+
+<!--            <ImageView-->
+<!--                android:id="@+id/catFood"-->
+<!--                android:layout_width="60dp"-->
+<!--                android:layout_height="60dp"-->
+<!--                android:src="@drawable/ic_food"-->
+<!--                android:background="@drawable/bg_circle"-->
+<!--                android:padding="12dp"/>-->
+
+<!--            <TextView-->
+<!--                android:text="Food"-->
+<!--                android:textSize="12sp"/>-->
+<!--        </LinearLayout>-->
+
+<!--        &lt;!&ndash; Transport &ndash;&gt;-->
+<!--        <LinearLayout-->
+<!--            android:orientation="vertical"-->
+<!--            android:gravity="center"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:padding="8dp">-->
+
+<!--            <ImageView-->
+<!--                android:id="@+id/catTransport"-->
+<!--                android:layout_width="60dp"-->
+<!--                android:layout_height="60dp"-->
+<!--                android:src="@drawable/ic_transport"-->
+<!--                android:background="@drawable/bg_circle"-->
+<!--                android:padding="12dp"/>-->
+
+<!--            <TextView-->
+<!--                android:text="Transport"-->
+<!--                android:textSize="12sp"/>-->
+<!--        </LinearLayout>-->
+
+<!--    </GridLayout>-->
+
+    <!-- Save -->
+    <Button
+        android:id="@+id/btnSaveExpense"
+        android:text="Save"
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>

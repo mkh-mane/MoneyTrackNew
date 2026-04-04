@@ -14,7 +14,6 @@ public class TransactionEntity {
     public String type;        // INCOME / EXPENSE
     public long date;          // timestamp
     public String note;        // նշում (optional)
-
     public TransactionEntity(double amount, String category, String type, long date, String note) {
         this.amount = amount;
         this.category = category;
