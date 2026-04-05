@@ -20,6 +20,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
@@ -35,11 +37,12 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private TextView tvBalance;
-//    private Button btnIncome, btnExpense, btnHistory, btnVoice, btnScan;
+    //    private Button btnIncome, btnExpense, btnHistory, btnVoice, btnScan;
     private MaterialButton btnIncome, btnExpense, btnHistory, btnVoice, btnScan;
-
     private AppDatabase database;
     private TransactionDao transactionDao;
+    private FirebaseFirestore firestore;
+    private FirebaseAuth auth;
 
     ActivityResultLauncher<Intent> cameraLauncher =
             registerForActivityResult(
@@ -66,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        firestore = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
 
         tvBalance = findViewById(R.id.tvBalance);
         btnIncome = findViewById(R.id.btnIncome);
@@ -129,13 +134,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-
     private void showIncomeDialog() {
         View view = getLayoutInflater().inflate(R.layout.dialog_income, null);
-//        AlertDialog dialog = new AlertDialog.Builder(this)
-//                .setView(view)
-//                .create();
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         dialog.setContentView(view);
 
@@ -146,17 +146,33 @@ public class MainActivity extends AppCompatActivity {
             String value = etAmount.getText().toString().trim();
             if (!value.isEmpty()) {
                 double amount = Double.parseDouble(value);
+
+                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+                TransactionEntity transaction = new TransactionEntity(
+                        amount,
+                        "Income",
+                        "INCOME",
+                        System.currentTimeMillis(),
+                        "",
+                        userId   // ✅ VERY IMPORTANT
+                );
+
                 new Thread(() -> {
-                    transactionDao.insert(new TransactionEntity(
-                            amount,
-                            "Income",
-                            "INCOME",
-                            System.currentTimeMillis(),
-                            ""
-                    ));
+
+                    // Room
+                    transactionDao.insert(transaction);
+
+                    // Firebase
+                    FirebaseFirestore.getInstance()
+                            .collection("transactions")
+                            .add(transaction);
+
                     runOnUiThread(this::calculateAndUpdateBalance);
                 }).start();
                 dialog.dismiss();
+            } else {
+                Toast.makeText(this, "Enter amount", Toast.LENGTH_SHORT).show();
             }
         });
         dialog.show();
@@ -165,14 +181,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void showExpenseDialog() {
         View view = getLayoutInflater().inflate(R.layout.dialog_expense, null);
-
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         dialog.setContentView(view);
 
         EditText etAmount = view.findViewById(R.id.etAmountExpense);
         Button btnSave = view.findViewById(R.id.btnSaveExpense);
 
-        // ✅ CATEGORY
         final String[] selectedCategory = {"Other"};
 
         LinearLayout catFood = view.findViewById(R.id.catFood);
@@ -197,7 +211,6 @@ public class MainActivity extends AppCompatActivity {
             highlightSelected(catShopping, allCats);
         });
 
-        // ➕ Custom category
         catAdd.setOnClickListener(v -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("New Category");
@@ -218,21 +231,32 @@ public class MainActivity extends AppCompatActivity {
             builder.show();
         });
 
-        // 💾 SAVE
         btnSave.setOnClickListener(v -> {
             String value = etAmount.getText().toString().trim();
 
             if (!value.isEmpty()) {
                 double amount = Double.parseDouble(value);
 
+                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+                TransactionEntity transaction = new TransactionEntity(
+                        amount,
+                        selectedCategory[0],
+                        "EXPENSE",
+                        System.currentTimeMillis(),
+                        "",
+                        userId
+                );
+
                 new Thread(() -> {
-                    transactionDao.insert(new TransactionEntity(
-                            amount,
-                            selectedCategory[0],   // ✅ category
-                            "EXPENSE",             // ✅ type
-                            System.currentTimeMillis(),
-                            ""
-                    ));
+
+                    // Room
+                    transactionDao.insert(transaction);
+
+                    // Firebase
+                    FirebaseFirestore.getInstance()
+                            .collection("transactions")
+                            .add(transaction);
 
                     runOnUiThread(this::calculateAndUpdateBalance);
 
@@ -276,7 +300,7 @@ public class MainActivity extends AppCompatActivity {
         selected.setBackgroundResource(R.drawable.selected_circle);
     }
 
-   //voice
+    //voice
     private void startVoiceInput() {
 
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
@@ -312,7 +336,8 @@ public class MainActivity extends AppCompatActivity {
             try {
                 amount = Double.parseDouble(word.replace(",", "").replace(".", ""));
                 break;
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
         if (amount == 0) return;
         String type = text.contains("income") ? "INCOME" : "EXPENSE";
@@ -334,20 +359,30 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        category = category.substring(0,1).toUpperCase() + category.substring(1);
+        category = category.substring(0, 1).toUpperCase() + category.substring(1);
 
         double finalAmount = amount;
         String finalCategory = category;
         String finalType = type;
 
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        TransactionEntity transaction = new TransactionEntity(
+                finalAmount,
+                finalCategory,
+                finalType,
+                System.currentTimeMillis(),
+                "",
+                userId
+        );
+
         new Thread(() -> {
-            transactionDao.insert(new TransactionEntity(
-                    finalAmount,
-                    finalCategory,
-                    finalType,
-                    System.currentTimeMillis(),
-                    ""
-            ));
+            // Room
+            transactionDao.insert(transaction);
+            // Firebase
+            FirebaseFirestore.getInstance()
+                    .collection("transactions")
+                    .add(transaction);
 
             runOnUiThread(this::calculateAndUpdateBalance);
         }).start();
@@ -394,19 +429,25 @@ public class MainActivity extends AppCompatActivity {
                 .setMessage("Amount: " + amount)
                 .setPositiveButton("Add", (d, w) -> {
 
+                    String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    TransactionEntity transaction = new TransactionEntity(
+                            amount,
+                            "Receipt",
+                            "EXPENSE",
+                            System.currentTimeMillis(),
+                            "",
+                            userId
+                    );
+
                     new Thread(() -> {
-                        transactionDao.insert(new TransactionEntity(
-                                amount,
-                                "Receipt",
-                                "EXPENSE",
-                                System.currentTimeMillis(),
-                                ""
-                        ));
-
+                        // Room
+                        transactionDao.insert(transaction);
+                        // Firebase
+                        FirebaseFirestore.getInstance()
+                                .collection("transactions")
+                                .add(transaction);
                         runOnUiThread(this::calculateAndUpdateBalance);
-
                     }).start();
-
                 })
                 .setNegativeButton("Cancel", null)
                 .show();

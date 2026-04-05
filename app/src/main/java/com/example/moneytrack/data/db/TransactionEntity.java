@@ -8,17 +8,20 @@ public class TransactionEntity {
 
     @PrimaryKey(autoGenerate = true)
     public int id;
+    public String userId;
 
     public double amount;      // գումար
     public String category;    // category (Food, Transport...)
     public String type;        // INCOME / EXPENSE
     public long date;          // timestamp
     public String note;        // նշում (optional)
-    public TransactionEntity(double amount, String category, String type, long date, String note) {
+
+    public TransactionEntity(double amount, String category, String type, long date, String note, String userId) {
         this.amount = amount;
         this.category = category;
         this.type = type;
         this.date = date;
         this.note = note;
+        this.userId=userId;
     }
 }
