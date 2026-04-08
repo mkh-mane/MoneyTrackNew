@@ -141,13 +141,32 @@ public class MainActivity extends AppCompatActivity {
 
         EditText etAmount = view.findViewById(R.id.etAmountIncome);
         Button btnSave = view.findViewById(R.id.btnSaveIncome);
+
+        final String[] selectedSource = {"Cash"};
+
+        LinearLayout srcCash = view.findViewById(R.id.srcCashIncome);
+        LinearLayout srcCard = view.findViewById(R.id.srcCardIncome);
+
+        View[] allSources = {srcCash, srcCard};
+
+        srcCash.setOnClickListener(v -> {
+            selectedSource[0] = "Cash";
+            highlightSelected(srcCash, allSources);
+        });
+
+        srcCard.setOnClickListener(v -> {
+            selectedSource[0] = "Card";
+            highlightSelected(srcCard, allSources);
+        });
+
+
         // CATEGORY
         final String[] selectedCategory = {"Salary"};
 
         LinearLayout catSalary = view.findViewById(R.id.catSalary);
         LinearLayout catBonus = view.findViewById(R.id.catBonus);
         LinearLayout catOther = view.findViewById(R.id.catOtherIncome);
-        LinearLayout catAdd = view.findViewById(R.id.catAddIncome);
+        LinearLayout catAdd = view.findViewById(R.id.catAdd);
 
         View[] allCats = {catSalary, catBonus, catOther};
 
@@ -196,7 +215,8 @@ public class MainActivity extends AppCompatActivity {
                         "INCOME",
                         System.currentTimeMillis(),
                         "",
-                        userId
+                        userId,
+                        selectedSource[0]
                 );
 
                 new Thread(() -> {
@@ -225,6 +245,26 @@ public class MainActivity extends AppCompatActivity {
 
         EditText etAmount = view.findViewById(R.id.etAmountExpense);
         Button btnSave = view.findViewById(R.id.btnSaveExpense);
+
+        final String[] selectedSource = {"Cash"};
+
+        LinearLayout srcCash = view.findViewById(R.id.srcCash);
+        LinearLayout srcCard = view.findViewById(R.id.srcCard);
+
+        View[] allSources = {srcCash, srcCard};
+
+        srcCash.setOnClickListener(v -> {
+            selectedSource[0] = "Cash";
+            highlightSelected(srcCash, allSources);
+        });
+
+        srcCard.setOnClickListener(v -> {
+            selectedSource[0] = "Card";
+            highlightSelected(srcCard, allSources);
+        });
+
+
+
         final String[] selectedCategory = {"Other"};
 
         LinearLayout catFood = view.findViewById(R.id.catFood);
@@ -283,7 +323,8 @@ public class MainActivity extends AppCompatActivity {
                         "EXPENSE",
                         System.currentTimeMillis(),
                         "",
-                        userId
+                        userId,
+                        selectedSource[0]
                 );
 
                 new Thread(() -> {

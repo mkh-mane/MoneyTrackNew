@@ -47,7 +47,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         TransactionEntity transaction = list.get(position);
 
         holder.tvType.setText(transaction.type);
-        holder.tvCategory.setText(transaction.category);
+        holder.tvCategory.setText(transaction.source + " → " + transaction.category);
         holder.tvAmount.setText(String.valueOf(transaction.amount));
 
         holder.itemView.setOnClickListener(v -> {
