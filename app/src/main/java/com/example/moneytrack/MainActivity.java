@@ -141,25 +141,65 @@ public class MainActivity extends AppCompatActivity {
 
         EditText etAmount = view.findViewById(R.id.etAmountIncome);
         Button btnSave = view.findViewById(R.id.btnSaveIncome);
+        // CATEGORY
+        final String[] selectedCategory = {"Salary"};
 
+        LinearLayout catSalary = view.findViewById(R.id.catSalary);
+        LinearLayout catBonus = view.findViewById(R.id.catBonus);
+        LinearLayout catOther = view.findViewById(R.id.catOtherIncome);
+        LinearLayout catAdd = view.findViewById(R.id.catAddIncome);
+
+        View[] allCats = {catSalary, catBonus, catOther};
+
+        catSalary.setOnClickListener(v -> {
+            selectedCategory[0] = "Salary";
+            highlightSelected(catSalary, allCats);
+        });
+
+        catBonus.setOnClickListener(v -> {
+            selectedCategory[0] = "Bonus";
+            highlightSelected(catBonus, allCats);
+        });
+
+        catOther.setOnClickListener(v -> {
+            selectedCategory[0] = "Other";
+            highlightSelected(catOther, allCats);
+        });
+        // Custom category
+        catAdd.setOnClickListener(v -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("New Income Category");
+            final EditText input = new EditText(this);
+            input.setHint("Enter category name");
+            builder.setView(input);
+            builder.setPositiveButton("Add", (d, which) -> {
+                String newCategory = input.getText().toString().trim();
+                if (!newCategory.isEmpty()) {
+                    selectedCategory[0] = newCategory;
+                    Toast.makeText(this, "Selected: " + newCategory, Toast.LENGTH_SHORT).show();
+                }
+            });
+            builder.setNegativeButton("Cancel", null);
+            builder.show();
+        });
+
+        //  SAVE
         btnSave.setOnClickListener(v -> {
             String value = etAmount.getText().toString().trim();
             if (!value.isEmpty()) {
                 double amount = Double.parseDouble(value);
 
                 String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-
                 TransactionEntity transaction = new TransactionEntity(
                         amount,
-                        "Income",
+                        selectedCategory[0],
                         "INCOME",
                         System.currentTimeMillis(),
                         "",
-                        userId   // ✅ VERY IMPORTANT
+                        userId
                 );
 
                 new Thread(() -> {
-
                     // Room
                     transactionDao.insert(transaction);
 
@@ -167,7 +207,6 @@ public class MainActivity extends AppCompatActivity {
                     FirebaseFirestore.getInstance()
                             .collection("transactions")
                             .add(transaction);
-
                     runOnUiThread(this::calculateAndUpdateBalance);
                 }).start();
                 dialog.dismiss();
@@ -186,7 +225,6 @@ public class MainActivity extends AppCompatActivity {
 
         EditText etAmount = view.findViewById(R.id.etAmountExpense);
         Button btnSave = view.findViewById(R.id.btnSaveExpense);
-
         final String[] selectedCategory = {"Other"};
 
         LinearLayout catFood = view.findViewById(R.id.catFood);

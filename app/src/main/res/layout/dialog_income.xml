@@ -2,28 +2,130 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:padding="16dp">
 
+    <!-- TITLE -->
     <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="Income"
         android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:textStyle="bold"/>
 
+    <!-- CATEGORY -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Category"
+        android:layout_marginTop="16dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
+
+        <!-- SALARY -->
+        <LinearLayout
+            android:id="@+id/catSalary"
+            android:layout_width="0dp"
+            android:layout_height="70dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_circle">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_money"/>
+
+            <TextView
+                android:text="Salary"
+                android:textSize="12sp"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"/>
+        </LinearLayout>
+
+        <!-- BONUS -->
+        <LinearLayout
+            android:id="@+id/catBonus"
+            android:layout_width="0dp"
+            android:layout_height="70dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_circle">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_money"/>
+
+            <TextView
+                android:text="Bonus"
+                android:textSize="12sp"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"/>
+        </LinearLayout>
+
+        <!-- OTHER -->
+        <LinearLayout
+            android:id="@+id/catOtherIncome"
+            android:layout_width="0dp"
+            android:layout_height="70dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_circle">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_money"/>
+
+            <TextView
+                android:text="Other"
+                android:textSize="12sp"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"/>
+        </LinearLayout>
+
+        <!-- ADD -->
+        <LinearLayout
+            android:id="@+id/catAddIncome"
+            android:layout_width="0dp"
+            android:layout_height="70dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_circle">
+
+            <TextView
+                android:text="+"
+                android:textSize="20sp"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+    <!-- AMOUNT -->
     <EditText
         android:id="@+id/etAmountIncome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:hint="Enter amount"
         android:inputType="numberDecimal"
-        android:layout_marginTop="16dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_marginTop="12dp"/>
 
+    <!-- SAVE -->
     <Button
         android:id="@+id/btnSaveIncome"
-        android:text="Save"
-        android:layout_marginTop="16dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:text="Save"
+        android:layout_marginTop="20dp"/>
 
 </LinearLayout>
