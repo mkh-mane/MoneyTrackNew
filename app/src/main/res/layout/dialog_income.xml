@@ -77,11 +77,15 @@
         android:text="To"
         android:layout_marginTop="16dp"/>
 
-    <LinearLayout
+    <HorizontalScrollView
         android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:id="@+id/categoryContainerIncome"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="8dp">
+        android:orientation="horizontal">
 
         <!-- SALARY -->
         <LinearLayout
@@ -151,7 +155,7 @@
 
         <!-- ADD -->
         <LinearLayout
-            android:id="@+id/catAdd"
+            android:id="@+id/catAddIncome"
             android:layout_width="80dp"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -172,6 +176,7 @@
         </LinearLayout>
 
     </LinearLayout>
+    </HorizontalScrollView>
 
 
     <!-- AMOUNT -->

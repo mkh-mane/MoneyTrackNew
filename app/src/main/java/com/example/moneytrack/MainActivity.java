@@ -2,10 +2,12 @@ package com.example.moneytrack;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
 
@@ -48,14 +50,10 @@ public class MainActivity extends AppCompatActivity {
             registerForActivityResult(
                     new ActivityResultContracts.StartActivityForResult(),
                     result -> {
-
                         if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-
                             Bundle extras = result.getData().getExtras();
-
                             if (extras != null) {
                                 Bitmap imageBitmap = (Bitmap) extras.get("data");
-
                                 if (imageBitmap != null) {
                                     processReceiptImage(imageBitmap);
                                 }
@@ -142,7 +140,8 @@ public class MainActivity extends AppCompatActivity {
         EditText etAmount = view.findViewById(R.id.etAmountIncome);
         Button btnSave = view.findViewById(R.id.btnSaveIncome);
 
-        final String[] selectedSource = {"Cash"};
+        // 🔥 SOURCE
+        final String[] selectedSource = {" "};
 
         LinearLayout srcCash = view.findViewById(R.id.srcCashIncome);
         LinearLayout srcCard = view.findViewById(R.id.srcCardIncome);
@@ -159,32 +158,60 @@ public class MainActivity extends AppCompatActivity {
             highlightSelected(srcCard, allSources);
         });
 
-
-        // CATEGORY
-        final String[] selectedCategory = {"Salary"};
+        // 🔥 CATEGORY
+        final String[] selectedCategory = {" "};
 
         LinearLayout catSalary = view.findViewById(R.id.catSalary);
         LinearLayout catBonus = view.findViewById(R.id.catBonus);
         LinearLayout catOther = view.findViewById(R.id.catOtherIncome);
-        LinearLayout catAdd = view.findViewById(R.id.catAdd);
+        LinearLayout catAdd = view.findViewById(R.id.catAddIncome);
+        LinearLayout categoryContainer = view.findViewById(R.id.categoryContainerIncome);
 
-        View[] allCats = {catSalary, catBonus, catOther};
+        View[] staticCats = {catSalary, catBonus, catOther};
 
         catSalary.setOnClickListener(v -> {
             selectedCategory[0] = "Salary";
-            highlightSelected(catSalary, allCats);
+            highlightAllCategories(catSalary, categoryContainer, staticCats);
         });
 
         catBonus.setOnClickListener(v -> {
             selectedCategory[0] = "Bonus";
-            highlightSelected(catBonus, allCats);
+            highlightAllCategories(catBonus, categoryContainer, staticCats);
         });
 
         catOther.setOnClickListener(v -> {
             selectedCategory[0] = "Other";
-            highlightSelected(catOther, allCats);
+            highlightAllCategories(catOther, categoryContainer, staticCats);
         });
-        // Custom category
+
+        // 🔥 LOAD SAVED
+        List<String> savedCats = loadCategories("income_categories");
+        for (String cat : savedCats) {
+
+            LinearLayout newCat = new LinearLayout(this);
+            newCat.setOrientation(LinearLayout.VERTICAL);
+            newCat.setGravity(Gravity.CENTER);
+            newCat.setPadding(16,16,16,16);
+
+            ImageView icon = new ImageView(this);
+            icon.setImageResource(R.drawable.ic_other);
+            icon.setLayoutParams(new LinearLayout.LayoutParams(80,80));
+
+            TextView text = new TextView(this);
+            text.setText(cat);
+
+            newCat.addView(icon);
+            newCat.addView(text);
+
+            newCat.setOnClickListener(v -> {
+                selectedCategory[0] = cat;
+                highlightAllCategories(newCat, categoryContainer, staticCats);
+            });
+
+            categoryContainer.addView(newCat);
+        }
+
+        // ➕ ADD NEW
         catAdd.setOnClickListener(v -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("New Income Category");
@@ -195,7 +222,35 @@ public class MainActivity extends AppCompatActivity {
                 String newCategory = input.getText().toString().trim();
                 if (!newCategory.isEmpty()) {
                     selectedCategory[0] = newCategory;
-                    Toast.makeText(this, "Selected: " + newCategory, Toast.LENGTH_SHORT).show();
+
+                    List<String> list = loadCategories("income_categories");
+                    list.add(newCategory);
+                    saveCategories(list, "income_categories");
+
+                    LinearLayout newCat = new LinearLayout(this);
+                    newCat.setOrientation(LinearLayout.VERTICAL);
+                    newCat.setGravity(Gravity.CENTER);
+                    newCat.setPadding(16,16,16,16);
+
+                    ImageView icon = new ImageView(this);
+                    icon.setImageResource(R.drawable.ic_other);
+                    icon.setLayoutParams(new LinearLayout.LayoutParams(80,80));
+
+                    TextView text = new TextView(this);
+                    text.setText(newCategory);
+
+                    newCat.addView(icon);
+                    newCat.addView(text);
+
+                    newCat.setOnClickListener(v1 -> {
+                        selectedCategory[0] = newCategory;
+                        highlightAllCategories(newCat, categoryContainer, staticCats);
+                    });
+
+                    categoryContainer.addView(newCat);
+                    newCat.performClick();
+
+                    Toast.makeText(this, "Added: " + newCategory, Toast.LENGTH_SHORT).show();
                 }
             });
             builder.setNegativeButton("Cancel", null);
@@ -207,7 +262,6 @@ public class MainActivity extends AppCompatActivity {
             String value = etAmount.getText().toString().trim();
             if (!value.isEmpty()) {
                 double amount = Double.parseDouble(value);
-
                 String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
                 TransactionEntity transaction = new TransactionEntity(
                         amount,
@@ -220,10 +274,8 @@ public class MainActivity extends AppCompatActivity {
                 );
 
                 new Thread(() -> {
-                    // Room
                     transactionDao.insert(transaction);
 
-                    // Firebase
                     FirebaseFirestore.getInstance()
                             .collection("transactions")
                             .add(transaction);
@@ -246,7 +298,8 @@ public class MainActivity extends AppCompatActivity {
         EditText etAmount = view.findViewById(R.id.etAmountExpense);
         Button btnSave = view.findViewById(R.id.btnSaveExpense);
 
-        final String[] selectedSource = {"Cash"};
+        // SOURCE
+        final String[] selectedSource = {" "};
 
         LinearLayout srcCash = view.findViewById(R.id.srcCash);
         LinearLayout srcCard = view.findViewById(R.id.srcCard);
@@ -263,32 +316,69 @@ public class MainActivity extends AppCompatActivity {
             highlightSelected(srcCard, allSources);
         });
 
-
-
+        //  CATEGORY
         final String[] selectedCategory = {"Other"};
 
         LinearLayout catFood = view.findViewById(R.id.catFood);
         LinearLayout catTransport = view.findViewById(R.id.catTransport);
         LinearLayout catShopping = view.findViewById(R.id.catShopping);
         LinearLayout catAdd = view.findViewById(R.id.catAdd);
-
-        View[] allCats = {catFood, catTransport, catShopping};
+        LinearLayout categoryContainer = view.findViewById(R.id.categoryContainer);
+        View[] staticCats = {catFood, catTransport, catShopping};
 
         catFood.setOnClickListener(v -> {
             selectedCategory[0] = "Food";
-            highlightSelected(catFood, allCats);
+            highlightAllCategories(catFood, categoryContainer, staticCats);
         });
 
         catTransport.setOnClickListener(v -> {
             selectedCategory[0] = "Transport";
-            highlightSelected(catTransport, allCats);
+            highlightAllCategories(catTransport, categoryContainer, staticCats);
         });
 
         catShopping.setOnClickListener(v -> {
             selectedCategory[0] = "Shopping";
-            highlightSelected(catShopping, allCats);
+            highlightAllCategories(catShopping, categoryContainer, staticCats);
         });
+        //  load saved categories
+        List<String> savedCats = loadCategories("expense_categories");
+        for (String cat : savedCats) {
 
+            LinearLayout newCat = new LinearLayout(this);
+            newCat.setOrientation(LinearLayout.VERTICAL);
+            newCat.setGravity(Gravity.CENTER);
+            newCat.setPadding(16,16,16,16);
+
+            ImageView icon = new ImageView(this);
+            icon.setImageResource(R.drawable.ic_other);
+            icon.setLayoutParams(new LinearLayout.LayoutParams(80,80));
+
+            TextView text = new TextView(this);
+            text.setText(cat);
+
+            newCat.addView(icon);
+            newCat.addView(text);
+
+//            newCat.setOnClickListener(v -> {
+//                selectedCategory[0] = cat;
+//
+//                int count = categoryContainer.getChildCount();
+//                View[] allViews = new View[count];
+//                for (int i = 0; i < count; i++) {
+//                    allViews[i] = categoryContainer.getChildAt(i);
+//                }
+//                highlightSelected(newCat, allViews);
+//            });
+            newCat.setOnClickListener(v -> {
+                selectedCategory[0] = cat;
+
+                highlightAllCategories(newCat, categoryContainer, staticCats);
+            });
+
+            categoryContainer.addView(newCat);
+        }
+
+        //  ADD NEW CATEGORY
         catAdd.setOnClickListener(v -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("New Category");
@@ -301,7 +391,48 @@ public class MainActivity extends AppCompatActivity {
                 String newCategory = input.getText().toString().trim();
                 if (!newCategory.isEmpty()) {
                     selectedCategory[0] = newCategory;
-                    Toast.makeText(this, "Selected: " + newCategory, Toast.LENGTH_SHORT).show();
+
+                    List<String> list = loadCategories("expense_categories");
+                    list.add(newCategory);
+                    saveCategories(list, "expense_categories");
+                    // ADD TO UI
+                    LinearLayout newCat = new LinearLayout(this);
+                    newCat.setOrientation(LinearLayout.VERTICAL);
+                    newCat.setGravity(Gravity.CENTER);
+                    newCat.setPadding(16,16,16,16);
+
+                    ImageView icon = new ImageView(this);
+                    icon.setImageResource(R.drawable.ic_other);
+                    icon.setLayoutParams(new LinearLayout.LayoutParams(80,80));
+
+                    TextView text = new TextView(this);
+                    text.setText(newCategory);
+
+                    newCat.addView(icon);
+                    newCat.addView(text);
+
+//                    newCat.setOnClickListener(v1 -> {
+//                        selectedCategory[0] = newCategory;
+//
+//                        int count = categoryContainer.getChildCount();
+//                        View[] allViews = new View[count];
+//
+//                        for (int i = 0; i < count; i++) {
+//                            allViews[i] = categoryContainer.getChildAt(i);
+//                        }
+//
+//                        highlightSelected(newCat, allViews);
+//                    });
+                        newCat.setOnClickListener(v1 -> {
+                            selectedCategory[0] = newCategory;
+
+                            highlightAllCategories(newCat, categoryContainer, staticCats);
+                        });
+
+                    categoryContainer.addView(newCat);
+                    newCat.performClick();
+
+                    Toast.makeText(this, "Added: " + newCategory, Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -311,12 +442,9 @@ public class MainActivity extends AppCompatActivity {
 
         btnSave.setOnClickListener(v -> {
             String value = etAmount.getText().toString().trim();
-
             if (!value.isEmpty()) {
                 double amount = Double.parseDouble(value);
-
                 String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-
                 TransactionEntity transaction = new TransactionEntity(
                         amount,
                         selectedCategory[0],
@@ -328,47 +456,34 @@ public class MainActivity extends AppCompatActivity {
                 );
 
                 new Thread(() -> {
-
                     // Room
                     transactionDao.insert(transaction);
-
                     // Firebase
                     FirebaseFirestore.getInstance()
                             .collection("transactions")
                             .add(transaction);
-
                     runOnUiThread(this::calculateAndUpdateBalance);
-
                 }).start();
-
                 dialog.dismiss();
             } else {
                 Toast.makeText(this, "Enter amount", Toast.LENGTH_SHORT).show();
             }
         });
-
         dialog.show();
     }
 
     private void calculateAndUpdateBalance() {
-
         new Thread(() -> {
-
             List<TransactionEntity> list = transactionDao.getAllTransactions();
-
             double total = 0;
-
             for (TransactionEntity t : list) {
                 if (t.type.equals("INCOME")) total += t.amount;
                 else total -= t.amount;
             }
-
             double finalTotal = total;
-
             runOnUiThread(() ->
                     tvBalance.setText("Balance: " + finalTotal)
             );
-
         }).start();
     }
 
@@ -377,6 +492,52 @@ public class MainActivity extends AppCompatActivity {
             v.setBackgroundResource(android.R.color.transparent);
         }
         selected.setBackgroundResource(R.drawable.selected_circle);
+    }
+
+    private void highlightAllCategories(View selected,
+                                        LinearLayout categoryContainer,
+                                        View[] staticCats) {
+        // static category-ներ
+        for (View v : staticCats) {
+            v.setBackgroundResource(android.R.color.transparent);
+        }
+        // dynamic category-ներ
+        int count = categoryContainer.getChildCount();
+        for (int i = 0; i < count; i++) {
+            categoryContainer.getChildAt(i)
+                    .setBackgroundResource(android.R.color.transparent);
+        }
+        // highlight selected
+        selected.setBackgroundResource(R.drawable.selected_circle);
+    }
+
+    private void saveCategories(List<String> categories, String key) {
+        SharedPreferences prefs = getSharedPreferences("cats", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+
+        StringBuilder sb = new StringBuilder();
+        for (String cat : categories) {
+            sb.append(cat).append(",");
+        }
+
+        editor.putString(key, sb.toString());
+        editor.apply();
+    }
+
+    private List<String> loadCategories(String key) {
+        SharedPreferences prefs = getSharedPreferences("cats", MODE_PRIVATE);
+        String data = prefs.getString(key, "");
+
+        List<String> list = new ArrayList<>();
+
+        if (!data.isEmpty()) {
+            String[] arr = data.split(",");
+            for (String s : arr) {
+                if (!s.trim().isEmpty()) list.add(s);
+            }
+        }
+
+        return list;
     }
 
     //voice
