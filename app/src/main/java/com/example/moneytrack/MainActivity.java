@@ -581,6 +581,12 @@ public class MainActivity extends AppCompatActivity {
         }
         if (amount == 0) return;
         String type = text.contains("income") ? "INCOME" : "EXPENSE";
+        String source = "Cash"; // default
+
+        if (text.contains("card") || text.contains("visa") || text.contains("mastercard")) {
+            source = "Card";
+        }
+
         String category = "Other";
         for (String word : text.split(" ")) {
             word = word.replaceAll("[^a-z]", "");
@@ -593,7 +599,8 @@ public class MainActivity extends AppCompatActivity {
                     && !word.equals("i")
                     && !word.equals("income")
                     && !word.equals("expense")
-                    && !word.equals("salary")) {
+                    && !word.equals("cash")
+                    && !word.equals("card")) {
                 category = word;
                 break;
             }
@@ -604,7 +611,6 @@ public class MainActivity extends AppCompatActivity {
         double finalAmount = amount;
         String finalCategory = category;
         String finalType = type;
-
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
         TransactionEntity transaction = new TransactionEntity(
@@ -613,7 +619,8 @@ public class MainActivity extends AppCompatActivity {
                 finalType,
                 System.currentTimeMillis(),
                 "",
-                userId
+                userId,
+                source
         );
 
         new Thread(() -> {
