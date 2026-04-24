@@ -4,6 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
@@ -11,6 +15,8 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -18,6 +24,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -45,19 +52,23 @@ public class MainActivity extends AppCompatActivity {
     private TransactionDao transactionDao;
     private FirebaseFirestore firestore;
     private FirebaseAuth auth;
+    private String currentPhotoPath;
 
     ActivityResultLauncher<Intent> cameraLauncher =
             registerForActivityResult(
                     new ActivityResultContracts.StartActivityForResult(),
                     result -> {
-                        if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                            Bundle extras = result.getData().getExtras();
-                            if (extras != null) {
-                                Bitmap imageBitmap = (Bitmap) extras.get("data");
-                                if (imageBitmap != null) {
-                                    processReceiptImage(imageBitmap);
+                        if (result.getResultCode() == RESULT_OK) {
+                            if (currentPhotoPath != null) {
+                                Bitmap bitmap = BitmapFactory.decodeFile(currentPhotoPath);
+                                if (bitmap != null) {
+                                    processReceiptImage(bitmap);
+                                } else {
+                                    Toast.makeText(this, "Image load failed", Toast.LENGTH_SHORT).show();
                                 }
                             }
+                        } else {
+                            Toast.makeText(this, "Camera cancelled", Toast.LENGTH_SHORT).show();
                         }
                     }
             );
@@ -119,16 +130,27 @@ public class MainActivity extends AppCompatActivity {
         }
 
         //  Scan Button
-        if (btnScan != null) {
-            btnScan.setOnClickListener(v -> {
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                if (intent.resolveActivity(getPackageManager()) != null) {
-                    cameraLauncher.launch(intent);
-                } else {
-                    Toast.makeText(this, "Camera not available", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
+        btnScan.setOnClickListener(v -> openCamera());
+//        btnScan.setOnClickListener(v -> {
+//            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+//            if (intent.resolveActivity(getPackageManager()) != null) {
+//                try {
+//                    File photoFile = createImageFile();
+//
+//                    Uri photoURI = FileProvider.getUriForFile(
+//                            this,
+//                            getPackageName() + ".provider",
+//                            photoFile
+//                    );
+//                    intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+//
+//                    cameraLauncher.launch(intent);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    Toast.makeText(this, "Camera error", Toast.LENGTH_SHORT).show();
+//                }
+//            }
+//        });
     }
 
 
@@ -637,6 +659,8 @@ public class MainActivity extends AppCompatActivity {
 
     // scan
     private void processReceiptImage(Bitmap bitmap) {
+        bitmap = Bitmap.createScaledBitmap(bitmap, 1000, 1500, true);
+        bitmap = fixImageRotation(bitmap);
         InputImage image = InputImage.fromBitmap(bitmap, 0);
         TextRecognizer recognizer =
                 TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
@@ -647,33 +671,169 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(this, "Scan failed", Toast.LENGTH_SHORT).show());
     }
 
+    private Bitmap fixImageRotation(Bitmap bitmap) {
+        try {
+            ExifInterface exif = new ExifInterface(currentPhotoPath);
+            int orientation = exif.getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+            );
+            Matrix matrix = new Matrix();
+            if (orientation == ExifInterface.ORIENTATION_ROTATE_90) {
+                matrix.postRotate(90);
+            } else if (orientation == ExifInterface.ORIENTATION_ROTATE_180) {
+                matrix.postRotate(180);
+            } else if (orientation == ExifInterface.ORIENTATION_ROTATE_270) {
+                matrix.postRotate(270);
+            }
+            return Bitmap.createBitmap(
+                    bitmap,
+                    0,
+                    0,
+                    bitmap.getWidth(),
+                    bitmap.getHeight(),
+                    matrix,
+                    true
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bitmap;
+    }
+
     private void extractAmount(String text) {
-        double amount = 0;
+        double bestAmount = 0;
+        String[] lines = text.split("\n");
+        for (String line : lines) {
+            String lower = line.toLowerCase();
+            if (lower.contains("total") ||
+                    lower.contains("amount") ||
+                    lower.contains("total:") ||
+                    lower.contains("итого") ||
+                    lower.contains("ընդամենը") ||
+                    lower.contains("Ընդամենը։")) {
 
-        Pattern pattern = Pattern.compile("(\\d+[\\s.,]?\\d+)+");
-        Matcher matcher = pattern.matcher(text);
+                double value = extractNumberFromLine(line);
 
+                if (value > bestAmount) {
+                    bestAmount = value;
+                }
+            }
+        }
+        if (bestAmount == 0) {
+            for (String line : lines) {
+                double value = extractNumberFromLine(line);
+                if (value > bestAmount && value < 1000000) {
+                    bestAmount = value;
+                }
+            }
+        }
+        if (bestAmount > 0) {
+            showDetectedAmount(bestAmount);
+        } else {
+            Toast.makeText(this, "Amount not found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+
+
+    private double extractNumberFromLine(String line) {
+        line = line.replaceAll("(\\d)\\s+(?=\\d)", "$1");
+        line = line.replaceAll("[^0-9.,]", " ");
+        Pattern pattern = Pattern.compile("\\d{2,}(?:[.,]\\d+)?");
+        Matcher matcher = pattern.matcher(line);
+        double max = 0;
         while (matcher.find()) {
-
             try {
-                String number = matcher.group();
-                number = number.replace(" ", "");
-                number = number.replace(",", ".");
-
-                double value = Double.parseDouble(number);
-
-                if (value > amount) amount = value;
-
+                String num = matcher.group();
+                num = num.replace(",", ".");
+                double value = Double.parseDouble(num);
+                if (value > max && value > 20 && value < 1000000) {
+                    max = value;
+                }
             } catch (Exception ignored) {}
         }
-        if (amount > 0) showDetectedAmount(amount);
-        else Toast.makeText(this, "Amount not found", Toast.LENGTH_SHORT).show();
+        return max;
+    }
+
+
+    private File createImageFile() throws IOException {
+        String fileName = "receipt_" + System.currentTimeMillis();
+        File storageDir = getExternalFilesDir(null);
+        File image = File.createTempFile(
+                fileName,
+                ".jpg",
+                storageDir
+        );
+        currentPhotoPath = image.getAbsolutePath();
+        return image;
+    }
+
+
+    private void openCamera() {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            try {
+                File photoFile = createImageFile();
+
+                Uri photoURI = FileProvider.getUriForFile(
+                        this,
+                        "com.example.moneytrack.fileprovider", // ⚠️ MUST MATCH MANIFEST
+                        photoFile
+                );
+
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+
+                // 🔥 կարևոր permission flag
+                intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+                cameraLauncher.launch(intent);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(this, "Camera error", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void showDetectedAmount(double amount) {
+        final String[] selectedSource = {"Cash"}; // default
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 30, 50, 10);
+        TextView tv = new TextView(this);
+        tv.setText("Amount: " + amount);
+        tv.setTextSize(18);
+
+        RadioGroup radioGroup = new RadioGroup(this);
+        radioGroup.setOrientation(RadioGroup.HORIZONTAL);
+
+        RadioButton rbCash = new RadioButton(this);
+        rbCash.setText("Cash");
+        rbCash.setId(View.generateViewId()); // ✅ կարևոր
+        rbCash.setChecked(true);
+
+        RadioButton rbCard = new RadioButton(this);
+        rbCard.setText("Card");
+        rbCard.setId(View.generateViewId()); // ✅ կարևոր
+        radioGroup.addView(rbCash);
+        radioGroup.addView(rbCard);
+
+        radioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == rbCash.getId()) {
+                selectedSource[0] = "Cash";
+            } else {
+                selectedSource[0] = "Card";
+            }
+        });
+        layout.addView(tv);
+        layout.addView(radioGroup);
+
         new AlertDialog.Builder(this)
                 .setTitle("Detected Amount 💰")
-                .setMessage("Amount: " + amount)
+                .setView(layout)
                 .setPositiveButton("Add", (d, w) -> {
 
                     String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -683,13 +843,12 @@ public class MainActivity extends AppCompatActivity {
                             "EXPENSE",
                             System.currentTimeMillis(),
                             "",
-                            userId
+                            userId,
+                            selectedSource[0]
                     );
 
                     new Thread(() -> {
-                        // Room
                         transactionDao.insert(transaction);
-                        // Firebase
                         FirebaseFirestore.getInstance()
                                 .collection("transactions")
                                 .add(transaction);
