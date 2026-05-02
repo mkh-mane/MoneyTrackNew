@@ -36,11 +36,14 @@ public class AnalyzeActivity extends AppCompatActivity {
 
     RecyclerView goalsRecycler;
     GoalAdapter goalAdapter;
+    int previousTab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_analyze);
+
+//        previousTab = getIntent().getIntExtra("selectedTab", R.id.nav_home);
 
         barChart = findViewById(R.id.barChart);
 
@@ -57,51 +60,38 @@ public class AnalyzeActivity extends AppCompatActivity {
         btnMonth.setOnClickListener(v -> loadData(30));
 
         loadData(30);
-
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
-
         bottomNav.setSelectedItemId(R.id.nav_analyze);
-
         bottomNav.setOnItemSelectedListener(item -> {
-
             if (item.getItemId() == R.id.nav_home) {
                 startActivity(new Intent(this, MainActivity.class));
                 return true;
             }
-
             if (item.getItemId() == R.id.nav_history) {
                 startActivity(new Intent(this, HistoryActivity.class));
                 return true;
             }
-
             if (item.getItemId() == R.id.nav_analyze) {
                 return true;
             }
-
             if (item.getItemId() == R.id.nav_profile) {
                 startActivity(new Intent(this, ProfileActivity.class));
                 return true;
             }
-
             return false;
         });
 
         goalsRecycler = findViewById(R.id.goalsRecycler);
         goalsRecycler.setLayoutManager(new LinearLayoutManager(this));
-
         goalAdapter = new GoalAdapter(new ArrayList<>(), goal -> {
-
             if (goal.savedAmount >= goal.targetAmount) {
-
                 new AlertDialog.Builder(this)
                         .setTitle("Goal Completed")
                         .setMessage("You already reached this goal 🎉")
                         .setPositiveButton("OK", null)
                         .show();
-
                 return;
             }
-
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Add money to " + goal.name);
 
@@ -110,46 +100,31 @@ public class AnalyzeActivity extends AppCompatActivity {
             input.setInputType(InputType.TYPE_CLASS_NUMBER);
 
             builder.setView(input);
-
             builder.setPositiveButton("Add", (dialog, which) -> {
-
                 String text = input.getText().toString();
-
                 if (text.isEmpty()) return;
-
                 double amount = Double.parseDouble(text);
-
                 new Thread(() -> {
-
                     goalDao.addMoney(goal.id, amount);
-
                     runOnUiThread(() -> loadGoals());
-
                 }).start();
-
             });
-
-
             builder.setNegativeButton("Cancel", null);
             builder.show();
-
         });
 
         goalsRecycler.setAdapter(goalAdapter);
         ItemTouchHelper.SimpleCallback swipeCallback =
                 new ItemTouchHelper.SimpleCallback(0,
                         ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
-
                     @Override
                     public boolean onMove(RecyclerView recyclerView,
                                           RecyclerView.ViewHolder viewHolder,
                                           RecyclerView.ViewHolder target) {
                         return false;
                     }
-
                     @Override
                     public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
-
                         int position = viewHolder.getAdapterPosition();
                         GoalEntity goal = goalAdapter.getGoalAt(position);
 
@@ -223,6 +198,30 @@ public class AnalyzeActivity extends AppCompatActivity {
         });
 
         loadGoals();
+    }
+//    @Override
+//    public void onBackPressed() {
+//        Intent intent;
+//
+//        if (previousTab == R.id.nav_history) {
+//            intent = new Intent(this, HistoryActivity.class);
+//        } else {
+//            intent = new Intent(this, MainActivity.class);
+//        }
+//
+//        intent.putExtra("selectedTab", previousTab);
+//        startActivity(intent);
+//        finish();
+//    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_analyze);
+        }
     }
 
     private void loadData(int days) {

@@ -72,6 +72,15 @@ public class HistoryActivity extends AppCompatActivity {
             return false;
         });
     }
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_history);
+        }
+    }
     private void loadData() {
         new Thread(() -> {
             List<TransactionEntity> list = transactionDao.getAllTransactions();

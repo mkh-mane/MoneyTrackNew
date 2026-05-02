@@ -152,6 +152,15 @@ public class MainActivity extends AppCompatActivity {
 //            }
 //        });
     }
+@Override
+protected void onResume() {
+    super.onResume();
+
+    BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+    if (bottomNav != null) {
+        bottomNav.setSelectedItemId(R.id.nav_home);
+    }
+}
 
 
     private void showIncomeDialog() {
@@ -181,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // 🔥 CATEGORY
-        final String[] selectedCategory = {" "};
+        final String[] selectedCategory = {"Cash"};
 
         LinearLayout catSalary = view.findViewById(R.id.catSalary);
         LinearLayout catBonus = view.findViewById(R.id.catBonus);
@@ -230,7 +239,8 @@ public class MainActivity extends AppCompatActivity {
                 highlightAllCategories(newCat, categoryContainer, staticCats);
             });
 
-            categoryContainer.addView(newCat);
+            int index = categoryContainer.indexOfChild(catAdd);
+            categoryContainer.addView(newCat, index);
         }
 
         // ➕ ADD NEW
@@ -269,7 +279,8 @@ public class MainActivity extends AppCompatActivity {
                         highlightAllCategories(newCat, categoryContainer, staticCats);
                     });
 
-                    categoryContainer.addView(newCat);
+                    int index = categoryContainer.indexOfChild(catAdd);
+                    categoryContainer.addView(newCat, index);
                     newCat.performClick();
 
                     Toast.makeText(this, "Added: " + newCategory, Toast.LENGTH_SHORT).show();
@@ -321,7 +332,7 @@ public class MainActivity extends AppCompatActivity {
         Button btnSave = view.findViewById(R.id.btnSaveExpense);
 
         // SOURCE
-        final String[] selectedSource = {" "};
+        final String[] selectedSource = {"Cash"};
 
         LinearLayout srcCash = view.findViewById(R.id.srcCash);
         LinearLayout srcCard = view.findViewById(R.id.srcCard);
@@ -381,23 +392,13 @@ public class MainActivity extends AppCompatActivity {
             newCat.addView(icon);
             newCat.addView(text);
 
-//            newCat.setOnClickListener(v -> {
-//                selectedCategory[0] = cat;
-//
-//                int count = categoryContainer.getChildCount();
-//                View[] allViews = new View[count];
-//                for (int i = 0; i < count; i++) {
-//                    allViews[i] = categoryContainer.getChildAt(i);
-//                }
-//                highlightSelected(newCat, allViews);
-//            });
             newCat.setOnClickListener(v -> {
                 selectedCategory[0] = cat;
 
                 highlightAllCategories(newCat, categoryContainer, staticCats);
             });
-
-            categoryContainer.addView(newCat);
+            int index = categoryContainer.indexOfChild(catAdd);
+            categoryContainer.addView(newCat, index);
         }
 
         //  ADD NEW CATEGORY
@@ -432,26 +433,14 @@ public class MainActivity extends AppCompatActivity {
 
                     newCat.addView(icon);
                     newCat.addView(text);
-
-//                    newCat.setOnClickListener(v1 -> {
-//                        selectedCategory[0] = newCategory;
-//
-//                        int count = categoryContainer.getChildCount();
-//                        View[] allViews = new View[count];
-//
-//                        for (int i = 0; i < count; i++) {
-//                            allViews[i] = categoryContainer.getChildAt(i);
-//                        }
-//
-//                        highlightSelected(newCat, allViews);
-//                    });
                         newCat.setOnClickListener(v1 -> {
                             selectedCategory[0] = newCategory;
 
                             highlightAllCategories(newCat, categoryContainer, staticCats);
                         });
 
-                    categoryContainer.addView(newCat);
+                    int index = categoryContainer.indexOfChild(catAdd);
+                    categoryContainer.addView(newCat, index);
                     newCat.performClick();
 
                     Toast.makeText(this, "Added: " + newCategory, Toast.LENGTH_SHORT).show();
