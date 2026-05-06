@@ -40,6 +40,8 @@ import com.example.moneytrack.data.db.AppDatabase;
 import com.example.moneytrack.data.db.TransactionDao;
 import com.example.moneytrack.data.db.TransactionEntity;
 
+import org.json.JSONArray;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -131,26 +133,6 @@ public class MainActivity extends AppCompatActivity {
 
         //  Scan Button
         btnScan.setOnClickListener(v -> openCamera());
-//        btnScan.setOnClickListener(v -> {
-//            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-//            if (intent.resolveActivity(getPackageManager()) != null) {
-//                try {
-//                    File photoFile = createImageFile();
-//
-//                    Uri photoURI = FileProvider.getUriForFile(
-//                            this,
-//                            getPackageName() + ".provider",
-//                            photoFile
-//                    );
-//                    intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-//
-//                    cameraLauncher.launch(intent);
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                    Toast.makeText(this, "Camera error", Toast.LENGTH_SHORT).show();
-//                }
-//            }
-//        });
     }
 @Override
 protected void onResume() {
@@ -171,8 +153,8 @@ protected void onResume() {
         EditText etAmount = view.findViewById(R.id.etAmountIncome);
         Button btnSave = view.findViewById(R.id.btnSaveIncome);
 
-        // 🔥 SOURCE
-        final String[] selectedSource = {" "};
+        //  SOURCE
+        final String[] selectedSource = {"Cash"};
 
         LinearLayout srcCash = view.findViewById(R.id.srcCashIncome);
         LinearLayout srcCard = view.findViewById(R.id.srcCardIncome);
@@ -189,8 +171,9 @@ protected void onResume() {
             highlightSelected(srcCard, allSources);
         });
 
-        // 🔥 CATEGORY
-        final String[] selectedCategory = {"Cash"};
+        //  CATEGORY + ICON
+        final String[] selectedCategory = {"Salary"};
+        final String[] selectedIcon = {"💰"}; // 🔥 default icon
 
         LinearLayout catSalary = view.findViewById(R.id.catSalary);
         LinearLayout catBonus = view.findViewById(R.id.catBonus);
@@ -200,97 +183,42 @@ protected void onResume() {
 
         View[] staticCats = {catSalary, catBonus, catOther};
 
+        //  STATIC CATEGORY-ներ (icon-ով)
         catSalary.setOnClickListener(v -> {
             selectedCategory[0] = "Salary";
+            selectedIcon[0] = "💰";
             highlightAllCategories(catSalary, categoryContainer, staticCats);
         });
 
         catBonus.setOnClickListener(v -> {
             selectedCategory[0] = "Bonus";
+            selectedIcon[0] = "🎁";
             highlightAllCategories(catBonus, categoryContainer, staticCats);
         });
 
         catOther.setOnClickListener(v -> {
             selectedCategory[0] = "Other";
+            selectedIcon[0] = "📦";
             highlightAllCategories(catOther, categoryContainer, staticCats);
         });
 
-        // 🔥 LOAD SAVED
+        // ✅ LOAD SAVED (icon-ներով)
         List<String> savedCats = loadCategories("income_categories");
         for (String cat : savedCats) {
-
-            LinearLayout newCat = new LinearLayout(this);
-            newCat.setOrientation(LinearLayout.VERTICAL);
-            newCat.setGravity(Gravity.CENTER);
-            newCat.setPadding(16,16,16,16);
-
-            ImageView icon = new ImageView(this);
-            icon.setImageResource(R.drawable.ic_other);
-            icon.setLayoutParams(new LinearLayout.LayoutParams(80,80));
-
-            TextView text = new TextView(this);
-            text.setText(cat);
-
-            newCat.addView(icon);
-            newCat.addView(text);
-
-            newCat.setOnClickListener(v -> {
-                selectedCategory[0] = cat;
-                highlightAllCategories(newCat, categoryContainer, staticCats);
-            });
-
-            int index = categoryContainer.indexOfChild(catAdd);
-            categoryContainer.addView(newCat, index);
+            addCategoryView(cat, categoryContainer, selectedCategory, selectedIcon, staticCats, catAdd);
         }
 
-        // ➕ ADD NEW
-        catAdd.setOnClickListener(v -> {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("New Income Category");
-            final EditText input = new EditText(this);
-            input.setHint("Enter category name");
-            builder.setView(input);
-            builder.setPositiveButton("Add", (d, which) -> {
-                String newCategory = input.getText().toString().trim();
-                if (!newCategory.isEmpty()) {
-                    selectedCategory[0] = newCategory;
+        // ✅ ADD NEW (icon picker-ով)
+        catAdd.setOnClickListener(v -> showAddCategoryDialog(
+                "income_categories",
+                categoryContainer,
+                selectedCategory,
+                selectedIcon,
+                staticCats,
+                catAdd
+        ));
 
-                    List<String> list = loadCategories("income_categories");
-                    list.add(newCategory);
-                    saveCategories(list, "income_categories");
-
-                    LinearLayout newCat = new LinearLayout(this);
-                    newCat.setOrientation(LinearLayout.VERTICAL);
-                    newCat.setGravity(Gravity.CENTER);
-                    newCat.setPadding(16,16,16,16);
-
-                    ImageView icon = new ImageView(this);
-                    icon.setImageResource(R.drawable.ic_other);
-                    icon.setLayoutParams(new LinearLayout.LayoutParams(80,80));
-
-                    TextView text = new TextView(this);
-                    text.setText(newCategory);
-
-                    newCat.addView(icon);
-                    newCat.addView(text);
-
-                    newCat.setOnClickListener(v1 -> {
-                        selectedCategory[0] = newCategory;
-                        highlightAllCategories(newCat, categoryContainer, staticCats);
-                    });
-
-                    int index = categoryContainer.indexOfChild(catAdd);
-                    categoryContainer.addView(newCat, index);
-                    newCat.performClick();
-
-                    Toast.makeText(this, "Added: " + newCategory, Toast.LENGTH_SHORT).show();
-                }
-            });
-            builder.setNegativeButton("Cancel", null);
-            builder.show();
-        });
-
-        //  SAVE
+        // ✅ SAVE
         btnSave.setOnClickListener(v -> {
             String value = etAmount.getText().toString().trim();
             if (!value.isEmpty()) {
@@ -303,7 +231,8 @@ protected void onResume() {
                         System.currentTimeMillis(),
                         "",
                         userId,
-                        selectedSource[0]
+                        selectedSource[0],
+                        selectedIcon[0]
                 );
 
                 new Thread(() -> {
@@ -349,8 +278,9 @@ protected void onResume() {
             highlightSelected(srcCard, allSources);
         });
 
-        //  CATEGORY
-        final String[] selectedCategory = {"Other"};
+        // CATEGORY
+        final String[] selectedCategory = {"Food"};
+        final String[] selectedIcon = {"🍔"}; // 🔥 default
 
         LinearLayout catFood = view.findViewById(R.id.catFood);
         LinearLayout catTransport = view.findViewById(R.id.catTransport);
@@ -361,96 +291,39 @@ protected void onResume() {
 
         catFood.setOnClickListener(v -> {
             selectedCategory[0] = "Food";
+            selectedIcon[0] = "🍔";
             highlightAllCategories(catFood, categoryContainer, staticCats);
         });
 
         catTransport.setOnClickListener(v -> {
             selectedCategory[0] = "Transport";
+            selectedIcon[0] = "🚗";
             highlightAllCategories(catTransport, categoryContainer, staticCats);
         });
 
         catShopping.setOnClickListener(v -> {
             selectedCategory[0] = "Shopping";
+            selectedIcon[0] = "🛒";
             highlightAllCategories(catShopping, categoryContainer, staticCats);
         });
-        //  load saved categories
+
+        // LOAD SAVED
         List<String> savedCats = loadCategories("expense_categories");
         for (String cat : savedCats) {
-
-            LinearLayout newCat = new LinearLayout(this);
-            newCat.setOrientation(LinearLayout.VERTICAL);
-            newCat.setGravity(Gravity.CENTER);
-            newCat.setPadding(16,16,16,16);
-
-            ImageView icon = new ImageView(this);
-            icon.setImageResource(R.drawable.ic_other);
-            icon.setLayoutParams(new LinearLayout.LayoutParams(80,80));
-
-            TextView text = new TextView(this);
-            text.setText(cat);
-
-            newCat.addView(icon);
-            newCat.addView(text);
-
-            newCat.setOnClickListener(v -> {
-                selectedCategory[0] = cat;
-
-                highlightAllCategories(newCat, categoryContainer, staticCats);
-            });
-            int index = categoryContainer.indexOfChild(catAdd);
-            categoryContainer.addView(newCat, index);
+            addCategoryView(cat, categoryContainer, selectedCategory, selectedIcon, staticCats, catAdd);
         }
 
-        //  ADD NEW CATEGORY
-        catAdd.setOnClickListener(v -> {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("New Category");
+        // ADD NEW
+        catAdd.setOnClickListener(v -> showAddCategoryDialog(
+                "expense_categories",
+                categoryContainer,
+                selectedCategory,
+                selectedIcon,
+                staticCats,
+                catAdd
+        ));
 
-            final EditText input = new EditText(this);
-            input.setHint("Enter category name");
-            builder.setView(input);
-
-            builder.setPositiveButton("Add", (d, which) -> {
-                String newCategory = input.getText().toString().trim();
-                if (!newCategory.isEmpty()) {
-                    selectedCategory[0] = newCategory;
-
-                    List<String> list = loadCategories("expense_categories");
-                    list.add(newCategory);
-                    saveCategories(list, "expense_categories");
-                    // ADD TO UI
-                    LinearLayout newCat = new LinearLayout(this);
-                    newCat.setOrientation(LinearLayout.VERTICAL);
-                    newCat.setGravity(Gravity.CENTER);
-                    newCat.setPadding(16,16,16,16);
-
-                    ImageView icon = new ImageView(this);
-                    icon.setImageResource(R.drawable.ic_other);
-                    icon.setLayoutParams(new LinearLayout.LayoutParams(80,80));
-
-                    TextView text = new TextView(this);
-                    text.setText(newCategory);
-
-                    newCat.addView(icon);
-                    newCat.addView(text);
-                        newCat.setOnClickListener(v1 -> {
-                            selectedCategory[0] = newCategory;
-
-                            highlightAllCategories(newCat, categoryContainer, staticCats);
-                        });
-
-                    int index = categoryContainer.indexOfChild(catAdd);
-                    categoryContainer.addView(newCat, index);
-                    newCat.performClick();
-
-                    Toast.makeText(this, "Added: " + newCategory, Toast.LENGTH_SHORT).show();
-                }
-            });
-
-            builder.setNegativeButton("Cancel", null);
-            builder.show();
-        });
-
+        // SAVE
         btnSave.setOnClickListener(v -> {
             String value = etAmount.getText().toString().trim();
             if (!value.isEmpty()) {
@@ -463,13 +336,13 @@ protected void onResume() {
                         System.currentTimeMillis(),
                         "",
                         userId,
-                        selectedSource[0]
+                        selectedSource[0],
+                        selectedIcon[0] // ✅ հիմա ճիշտ կպահվի
                 );
 
                 new Thread(() -> {
-                    // Room
                     transactionDao.insert(transaction);
-                    // Firebase
+
                     FirebaseFirestore.getInstance()
                             .collection("transactions")
                             .add(transaction);
@@ -481,6 +354,93 @@ protected void onResume() {
             }
         });
         dialog.show();
+    }
+
+
+    private void addCategoryView(String cat,
+                                 LinearLayout container,
+                                 String[] selectedCategory,
+                                 String[] selectedIcon,
+                                 View[] staticCats,
+                                 View catAdd) {
+
+        String[] parts = cat.split("\\|");
+        String emoji = parts[0];
+        String name = parts.length > 1 ? parts[1] : cat;
+
+        LinearLayout newCat = new LinearLayout(this);
+        newCat.setOrientation(LinearLayout.VERTICAL);
+        newCat.setGravity(Gravity.CENTER);
+        newCat.setPadding(16,16,16,16);
+
+        TextView icon = new TextView(this);
+        icon.setText(emoji);
+        icon.setTextSize(24);
+
+        TextView text = new TextView(this);
+        text.setText(name);
+
+        newCat.addView(icon);
+        newCat.addView(text);
+
+        newCat.setOnClickListener(v -> {
+            selectedCategory[0] = name;
+            selectedIcon[0] = emoji;
+            highlightAllCategories(newCat, container, staticCats);
+        });
+
+        int index = container.indexOfChild(catAdd);
+        container.addView(newCat, index);
+    }
+
+    private void showAddCategoryDialog(String key,
+                                       LinearLayout container,
+                                       String[] selectedCategory,
+                                       String[] selectedIcon,
+                                       View[] staticCats,
+                                       View catAdd) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("New Category");
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(30,20,30,10);
+
+        EditText input = new EditText(this);
+        input.setHint("Category name");
+
+        EditText emojiInput = new EditText(this);
+        emojiInput.setHint("Emoji (example: 🍔 🚗 💰)");
+
+        layout.addView(input);
+        layout.addView(emojiInput);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("Add", (d, which) -> {
+
+            String name = input.getText().toString().trim();
+            String emoji = emojiInput.getText().toString().trim();
+
+            if (!name.isEmpty()) {
+
+                if (emoji.isEmpty()) emoji = "📦";
+
+                String finalCat = emoji + "|" + name;
+
+                List<String> list = loadCategories(key);
+                list.add(0, finalCat);
+                saveCategories(list, key);
+
+                addCategoryView(finalCat, container, selectedCategory, selectedIcon, staticCats, catAdd);
+
+                Toast.makeText(this, "Added: " + name, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
     }
 
     private void calculateAndUpdateBalance() {
@@ -526,12 +486,11 @@ protected void onResume() {
         SharedPreferences prefs = getSharedPreferences("cats", MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
 
-        StringBuilder sb = new StringBuilder();
+        JSONArray array = new JSONArray();
         for (String cat : categories) {
-            sb.append(cat).append(",");
+            array.put(cat);
         }
-
-        editor.putString(key, sb.toString());
+        editor.putString(key, array.toString());
         editor.apply();
     }
 
@@ -541,12 +500,12 @@ protected void onResume() {
 
         List<String> list = new ArrayList<>();
 
-        if (!data.isEmpty()) {
-            String[] arr = data.split(",");
-            for (String s : arr) {
-                if (!s.trim().isEmpty()) list.add(s);
+        try {
+            JSONArray array = new JSONArray(data);
+            for (int i = 0; i < array.length(); i++) {
+                list.add(array.getString(i));
             }
-        }
+        } catch (Exception ignored) {}
 
         return list;
     }
