@@ -2,6 +2,7 @@ package com.example.moneytrack;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.InputType;
@@ -42,8 +43,6 @@ public class AnalyzeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_analyze);
-
-//        previousTab = getIntent().getIntExtra("selectedTab", R.id.nav_home);
 
         barChart = findViewById(R.id.barChart);
 
@@ -132,20 +131,13 @@ public class AnalyzeActivity extends AppCompatActivity {
                                 .setTitle("Delete Goal")
                                 .setMessage("Are you sure you want to delete \"" + goal.name + "\"?")
                                 .setPositiveButton("Delete", (dialog, which) -> {
-
                                     new Thread(() -> {
-
                                         goalDao.deleteGoal(goal.id);
-
                                         runOnUiThread(() -> loadGoals());
-
                                     }).start();
-
                                 })
                                 .setNegativeButton("Cancel", (dialog, which) -> {
-
                                     goalAdapter.notifyItemChanged(position);
-
                                 })
                                 .show();
                     }
@@ -175,23 +167,17 @@ public class AnalyzeActivity extends AppCompatActivity {
             layout.addView(amountInput);
 
             builder.setView(layout);
-
             builder.setPositiveButton("Add", (dialog, which) -> {
-
                 String name = nameInput.getText().toString();
                 double amount = Double.parseDouble(amountInput.getText().toString());
-
                 new Thread(() -> {
-
                     GoalEntity goal = new GoalEntity(name, amount);
                     goalDao.insert(goal);
 
                     runOnUiThread(this::loadGoals);
-
                 }).start();
 
             });
-
             builder.setNegativeButton("Cancel", null);
             builder.show();
 
@@ -199,20 +185,6 @@ public class AnalyzeActivity extends AppCompatActivity {
 
         loadGoals();
     }
-//    @Override
-//    public void onBackPressed() {
-//        Intent intent;
-//
-//        if (previousTab == R.id.nav_history) {
-//            intent = new Intent(this, HistoryActivity.class);
-//        } else {
-//            intent = new Intent(this, MainActivity.class);
-//        }
-//
-//        intent.putExtra("selectedTab", previousTab);
-//        startActivity(intent);
-//        finish();
-//    }
 
     @Override
     protected void onResume() {
@@ -225,10 +197,11 @@ public class AnalyzeActivity extends AppCompatActivity {
     }
 
     private void loadData(int days) {
-
         long now = System.currentTimeMillis();
         long startTime = now - (days * 24L * 60 * 60 * 1000);
 
+        SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+        String currency = prefs.getString("currency", "AMD ֏");
         new Thread(() -> {
 
             Double income = transactionDao.getIncomeLast30Days(startTime);
@@ -237,15 +210,14 @@ public class AnalyzeActivity extends AppCompatActivity {
             if (income == null) income = 0.0;
             if (expense == null) expense = 0.0;
 
-            double finalIncome = income;
-            double finalExpense = expense;
-
+            //  CONVERT
+            double convertedIncome = CurrencyUtils.convert(income, currency);
+            double convertedExpense = CurrencyUtils.convert(expense, currency);
             runOnUiThread(() -> {
-
                 ArrayList<BarEntry> entries = new ArrayList<>();
 
-                entries.add(new BarEntry(1f, (float) finalIncome));
-                entries.add(new BarEntry(2f, (float) finalExpense));
+                entries.add(new BarEntry(1f, (float) convertedIncome));
+                entries.add(new BarEntry(2f, (float) convertedExpense));
 
                 BarDataSet dataSet = new BarDataSet(entries, "Money Flow");
 
@@ -258,6 +230,16 @@ public class AnalyzeActivity extends AppCompatActivity {
                 BarData barData = new BarData(dataSet);
 
                 barChart.setData(barData);
+                // 🔥 currency symbol
+                String symbol = "֏";
+                if (currency.contains("$"))
+                    symbol = "$";
+                else if (currency.contains("€"))
+                    symbol = "€";
+                else if (currency.contains("₽"))
+                    symbol = "₽";
+                barChart.getDescription()
+                        .setText("Currency: " + symbol);
                 barChart.invalidate();
 
             });
@@ -266,13 +248,9 @@ public class AnalyzeActivity extends AppCompatActivity {
     }
 
     private void loadGoals() {
-
         new Thread(() -> {
-
             List<GoalEntity> goals = goalDao.getAllGoals();
-
             runOnUiThread(() -> goalAdapter.setGoals(goals));
-
         }).start();
     }
 }

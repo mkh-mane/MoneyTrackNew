@@ -1,5 +1,7 @@
 package com.example.moneytrack;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,10 +15,8 @@ import com.example.moneytrack.data.db.GoalEntity;
 import java.util.List;
 
 public class GoalAdapter extends RecyclerView.Adapter<GoalAdapter.GoalViewHolder> {
-
     private List<GoalEntity> goals;
     private OnGoalClickListener listener;
-
     public interface OnGoalClickListener {
         void onGoalClick(GoalEntity goal);
     }
@@ -28,29 +28,51 @@ public class GoalAdapter extends RecyclerView.Adapter<GoalAdapter.GoalViewHolder
 
     @Override
     public GoalViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_goal, parent, false);
-
         return new GoalViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(GoalViewHolder holder, int position) {
-
         GoalEntity goal = goals.get(position);
-
         holder.goalName.setText(goal.name);
 
-        double saved = goal.savedAmount;
-        double target = goal.targetAmount;
+        // currency
+        SharedPreferences prefs = holder.itemView.getContext().getSharedPreferences(
+                                "settings",
+                                Context.MODE_PRIVATE);
+        String currency = prefs.getString("currency", "AMD ֏");
 
+        // convert
+        double saved = CurrencyUtils.convert(goal.savedAmount, currency);
+        double target = CurrencyUtils.convert(goal.targetAmount, currency);
+
+        // percent
         int percent = 0;
-        if (target > 0) {
-            percent = (int) ((saved / target) * 100);
+        if (goal.targetAmount > 0) {
+            percent = (int) ((goal.savedAmount / goal.targetAmount) * 100);
         }
 
-        holder.goalAmount.setText("$" + saved + " / $" + target);
+        // symbol
+        String symbol = "֏";
+        if (currency.contains("$"))
+            symbol = "$";
+        else if (currency.contains("€"))
+            symbol = "€";
+        else if (currency.contains("₽"))
+            symbol = "₽";
+        //  text
+        holder.goalAmount.setText(
+                String.format(
+                        "%.2f %s / %.2f %s",
+                        saved,
+                        symbol,
+                        target,
+                        symbol
+                )
+        );
+
         holder.goalPercent.setText(percent + "%");
         holder.goalProgress.setProgress(percent);
 

@@ -1,5 +1,7 @@
 package com.example.moneytrack;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,8 +49,30 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         TransactionEntity transaction = list.get(position);
 
         holder.tvType.setText(transaction.type);
-        holder.tvCategory.setText(transaction.source + " → " + transaction.category);
-        holder.tvAmount.setText(String.valueOf(transaction.amount));
+        holder.tvCategory.setText(
+                transaction.source + " → " + transaction.category
+        );
+        //  currency settings
+        SharedPreferences prefs = holder.itemView.getContext().getSharedPreferences(
+                                "settings",
+                                Context.MODE_PRIVATE);
+
+        String currency = prefs.getString("currency", "AMD ֏");
+        // convert amount
+        double converted = CurrencyUtils.convert(transaction.amount, currency);
+
+        //  symbol
+        String symbol = "֏";
+        if (currency.contains("$"))
+            symbol = "$";
+        else if (currency.contains("€"))
+            symbol = "€";
+        else if (currency.contains("₽"))
+            symbol = "₽";
+
+        String prefix = transaction.type.equals("INCOME") ? "+ " : "- ";
+        //  set amount
+        holder.tvAmount.setText(prefix + String.format("%.2f %s",converted,symbol));
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {

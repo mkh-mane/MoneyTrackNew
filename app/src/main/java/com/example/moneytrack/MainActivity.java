@@ -45,16 +45,25 @@ import org.json.JSONArray;
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
 public class MainActivity extends AppCompatActivity {
 
     private TextView tvBalance;
-    //    private Button btnIncome, btnExpense, btnHistory, btnVoice, btnScan;
     private MaterialButton btnIncome, btnExpense, btnHistory, btnVoice, btnScan;
     private AppDatabase database;
     private TransactionDao transactionDao;
     private FirebaseFirestore firestore;
     private FirebaseAuth auth;
     private String currentPhotoPath;
+    private double usdRate = 1;
+    private double eurRate = 0.92;
+    private double rubRate = 89;
+    private double amdPerUsd = 390;
 
     ActivityResultLauncher<Intent> cameraLauncher =
             registerForActivityResult(
@@ -133,7 +142,64 @@ public class MainActivity extends AppCompatActivity {
 
         //  Scan Button
         btnScan.setOnClickListener(v -> openCamera());
+
+        //currency
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://api.exchangerate.host/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        ExchangeApi api = retrofit.create(ExchangeApi.class);
+
+        api.getRates().enqueue(new Callback<ExchangeResponse>() {
+            @Override
+            public void onResponse(Call<ExchangeResponse> call,
+                                   Response<ExchangeResponse> response) {
+
+                if (response.body() != null &&
+                        response.body().rates != null) {
+                    Double amd = response.body().rates.get("AMD");
+                    if (amd != null) {
+                        amdPerUsd = amd;
+                    }
+                    calculateAndUpdateBalance();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ExchangeResponse> call, Throwable t) {
+
+            }
+        });
     }
+
+    private double convertCurrency(double amount, String currency) {
+        switch (currency) {
+            case "USD $":
+                return amount / amdPerUsd;
+            case "EUR €":
+                return (amount / amdPerUsd) * 0.92;
+            case "RUB ₽":
+                return (amount / amdPerUsd) * 89;
+            default:
+                return amount;
+        }
+    }
+
+
+    private double convertToAMD(double amount,String currency) {
+        switch (currency) {
+            case "USD $":
+                return amount * amdPerUsd;
+            case "EUR €":
+                return (amount / 0.92) * amdPerUsd;
+            case "RUB ₽":
+                return (amount / 89) * amdPerUsd;
+            default:
+                return amount;
+        }
+    }
+
 @Override
 protected void onResume() {
     super.onResume();
@@ -202,13 +268,13 @@ protected void onResume() {
             highlightAllCategories(catOther, categoryContainer, staticCats);
         });
 
-        // ✅ LOAD SAVED (icon-ներով)
+        // LOAD SAVED (icon-ներով)
         List<String> savedCats = loadCategories("income_categories");
         for (String cat : savedCats) {
             addCategoryView(cat, categoryContainer, selectedCategory, selectedIcon, staticCats, catAdd);
         }
 
-        // ✅ ADD NEW (icon picker-ով)
+        // ADD NEW (icon picker-ով)
         catAdd.setOnClickListener(v -> showAddCategoryDialog(
                 "income_categories",
                 categoryContainer,
@@ -218,11 +284,14 @@ protected void onResume() {
                 catAdd
         ));
 
-        // ✅ SAVE
+        // SAVE
         btnSave.setOnClickListener(v -> {
             String value = etAmount.getText().toString().trim();
             if (!value.isEmpty()) {
-                double amount = Double.parseDouble(value);
+                double enteredAmount = Double.parseDouble(value);
+                SharedPreferences prefs = getSharedPreferences("settings",MODE_PRIVATE);
+                String currency = prefs.getString("currency", "AMD ֏");
+                double amount = convertToAMD(enteredAmount, currency);
                 String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
                 TransactionEntity transaction = new TransactionEntity(
                         amount,
@@ -327,8 +396,10 @@ protected void onResume() {
         btnSave.setOnClickListener(v -> {
             String value = etAmount.getText().toString().trim();
             if (!value.isEmpty()) {
-                double amount = Double.parseDouble(value);
-                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                double enteredAmount = Double.parseDouble(value);
+                SharedPreferences prefs = getSharedPreferences("settings",MODE_PRIVATE);
+                String currency = prefs.getString("currency", "AMD ֏");
+                double amount = convertToAMD(enteredAmount, currency);                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
                 TransactionEntity transaction = new TransactionEntity(
                         amount,
                         selectedCategory[0],
@@ -445,16 +516,37 @@ protected void onResume() {
 
     private void calculateAndUpdateBalance() {
         new Thread(() -> {
-            List<TransactionEntity> list = transactionDao.getAllTransactions();
+            List<TransactionEntity> list =
+                    transactionDao.getAllTransactions();
             double total = 0;
             for (TransactionEntity t : list) {
-                if (t.type.equals("INCOME")) total += t.amount;
-                else total -= t.amount;
+                if (t.type.equals("INCOME"))
+                    total += t.amount;
+                else
+                    total -= t.amount;
             }
-            double finalTotal = total;
-            runOnUiThread(() ->
-                    tvBalance.setText("Balance: " + finalTotal)
-            );
+            SharedPreferences prefs =
+                    getSharedPreferences("settings", MODE_PRIVATE);
+            String currency =
+                    prefs.getString("currency", "AMD ֏");
+            double converted =
+                    convertCurrency(total, currency);
+            String symbol = "֏";
+            if (currency.contains("$"))
+                symbol = "$";
+            else if (currency.contains("€"))
+                symbol = "€";
+            else if (currency.contains("₽"))
+                symbol = "₽";
+            String finalSymbol = symbol;
+            double finalConverted = converted;
+            runOnUiThread(() -> {
+                tvBalance.setText(
+                        String.format("%.2f %s",
+                                finalConverted,
+                                finalSymbol)
+                );
+            });
         }).start();
     }
 

@@ -3,6 +3,10 @@ package com.example.moneytrack;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,6 +19,7 @@ import com.google.firebase.auth.FirebaseUser;
 public class ProfileActivity extends AppCompatActivity {
 
     private TextView tvEmail, btnLogout, btnChangePin;
+    Spinner spinnerCurrency;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +69,42 @@ public class ProfileActivity extends AppCompatActivity {
 
             return false;
         });
+
+        spinnerCurrency = findViewById(R.id.spinnerCurrency);
+        String[] currencies = {"AMD ֏", "USD $", "EUR €", "RUB ₽"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                currencies
+        );
+        spinnerCurrency.setAdapter(adapter);
+
+
+        SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+        String savedCurrency = prefs.getString("currency", "AMD ֏");
+        int position = adapter.getPosition(savedCurrency);
+        spinnerCurrency.setSelection(position);
+
+
+        spinnerCurrency.setOnItemSelectedListener(
+                new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent,
+                                               View view,
+                                               int position,
+                                               long id) {
+                        String selected = spinnerCurrency.getSelectedItem().toString();
+                        SharedPreferences.Editor editor =
+                                getSharedPreferences("settings", MODE_PRIVATE)
+                                        .edit();
+                        editor.putString("currency", selected);
+                        editor.apply();
+                    }
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {
+
+                    }
+                });
     }
 
     @Override
