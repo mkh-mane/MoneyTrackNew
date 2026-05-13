@@ -12,7 +12,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.moneytrack.data.db.TransactionEntity;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.ViewHolder> {
 
@@ -52,6 +55,12 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         holder.tvCategory.setText(
                 transaction.source + " → " + transaction.category
         );
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy  HH:mm", Locale.getDefault());
+        String formattedDate = sdf.format(new Date(transaction.date));
+
+        holder.tvDate.setText(formattedDate);
+
         //  currency settings
         SharedPreferences prefs = holder.itemView.getContext().getSharedPreferences(
                                 "settings",
@@ -89,6 +98,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     static class ViewHolder extends RecyclerView.ViewHolder {
 
         TextView tvType, tvAmount, tvCategory;
+        TextView tvDate;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -96,6 +106,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             tvType = itemView.findViewById(R.id.tvType);
             tvAmount = itemView.findViewById(R.id.tvAmount);
             tvCategory = itemView.findViewById(R.id.tvCategory);
+            tvDate = itemView.findViewById(R.id.tvDate);
         }
     }
 }

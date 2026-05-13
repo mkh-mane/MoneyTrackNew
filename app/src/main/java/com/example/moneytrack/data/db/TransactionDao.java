@@ -15,7 +15,11 @@ public interface TransactionDao {
 
     @Query("SELECT * FROM transactions ORDER BY date DESC")
     List<TransactionEntity> getAllTransactions();
+    @Query("SELECT * FROM transactions WHERE type = :type")
+    List<TransactionEntity> getTransactionsByType(String type);
 
+    @Query("SELECT * FROM transactions WHERE date >= :start")
+    List<TransactionEntity> getTransactionsThisMonth(long start);
     @Delete
     void delete(TransactionEntity transaction);
 

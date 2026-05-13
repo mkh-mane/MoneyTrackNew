@@ -3,6 +3,7 @@ package com.example.moneytrack;
 import android.content.Intent;
 import android.os.Bundle;
 import android.app.AlertDialog;
+import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -14,6 +15,7 @@ import com.example.moneytrack.data.db.TransactionEntity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class HistoryActivity extends AppCompatActivity {
@@ -30,6 +32,11 @@ public class HistoryActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         transactionDao = AppDatabase.getInstance(this).transactionDao();
+
+        Button btnAll = findViewById(R.id.btnAll);
+        Button btnIncomeFilter = findViewById(R.id.btnIncomeFilter);
+        Button btnExpenseFilter = findViewById(R.id.btnExpenseFilter);
+        Button btnMonth = findViewById(R.id.btnMonth);
 
         // Adapter with click listener
         adapter = new TransactionAdapter(new ArrayList<>(), transaction -> {
@@ -49,6 +56,12 @@ public class HistoryActivity extends AppCompatActivity {
 
         recyclerView.setAdapter(adapter);
         loadData();
+        btnAll.setOnClickListener(v -> loadData());
+        btnIncomeFilter.setOnClickListener(v -> loadFilteredData("INCOME"));
+        btnExpenseFilter.setOnClickListener(v -> loadFilteredData("EXPENSE"));
+        btnMonth.setOnClickListener(v -> loadThisMonthData());
+
+
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
         bottomNav.setSelectedItemId(R.id.nav_history);
         bottomNav.setOnItemSelectedListener(item -> {
@@ -87,4 +100,29 @@ public class HistoryActivity extends AppCompatActivity {
             runOnUiThread(() -> adapter.setData(list));
         }).start();
     }
+
+    private void loadFilteredData(String type) {
+        new Thread(() -> {
+            List<TransactionEntity> list =
+                    transactionDao.getTransactionsByType(type);
+            runOnUiThread(() ->
+                    adapter.setData(list));
+        }).start();
+    }
+
+    private void loadThisMonthData() {
+        Calendar calendar = Calendar.getInstance();
+
+        calendar.set(Calendar.DAY_OF_MONTH, 1);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+
+        long start = calendar.getTimeInMillis();
+        new Thread(() -> {
+            List<TransactionEntity> list = transactionDao.getTransactionsThisMonth(start);
+            runOnUiThread(() ->adapter.setData(list));
+        }).start();
+    }
+
 }
