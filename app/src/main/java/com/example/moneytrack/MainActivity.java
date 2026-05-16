@@ -25,6 +25,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -64,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
     private double eurRate = 0.92;
     private double rubRate = 89;
     private double amdPerUsd = 390;
+    private ViewPager2 balancePager;
 
     ActivityResultLauncher<Intent> cameraLauncher =
             registerForActivityResult(
@@ -92,7 +94,8 @@ public class MainActivity extends AppCompatActivity {
         firestore = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
 
-        tvBalance = findViewById(R.id.tvBalance);
+//        tvBalance = findViewById(R.id.tvBalance);
+        balancePager = findViewById(R.id.balancePager);
         btnIncome = findViewById(R.id.btnIncome);
         btnExpense = findViewById(R.id.btnExpense);
         btnHistory = findViewById(R.id.btnHistory);
@@ -519,18 +522,23 @@ protected void onResume() {
             List<TransactionEntity> list =
                     transactionDao.getAllTransactions();
             double total = 0;
+            double cash = 0;
+            double card = 0;
             for (TransactionEntity t : list) {
-                if (t.type.equals("INCOME"))
-                    total += t.amount;
-                else
-                    total -= t.amount;
+                double value = t.type.equals("INCOME") ? t.amount : -t.amount;
+                total += value;
+                if ("Cash".equals(t.source)) {
+                    cash += value;
+                }
+
+                else if ("Card".equals(t.source)) {
+                    card += value;
+                }
             }
-            SharedPreferences prefs =
-                    getSharedPreferences("settings", MODE_PRIVATE);
-            String currency =
-                    prefs.getString("currency", "AMD ֏");
-            double converted =
-                    convertCurrency(total, currency);
+
+            SharedPreferences prefs = getSharedPreferences("settings",MODE_PRIVATE);
+            String currency = prefs.getString("currency", "AMD ֏");
+
             String symbol = "֏";
             if (currency.contains("$"))
                 symbol = "$";
@@ -538,14 +546,44 @@ protected void onResume() {
                 symbol = "€";
             else if (currency.contains("₽"))
                 symbol = "₽";
-            String finalSymbol = symbol;
-            double finalConverted = converted;
+            double convertedTotal = CurrencyUtils.convert(total,currency);
+            double convertedCash = CurrencyUtils.convert(cash,currency);
+            double convertedCard = CurrencyUtils.convert(card,currency);
+
+            List<String> titles = new ArrayList<>();
+
+            titles.add("Total Balance");
+            titles.add("Cash Balance");
+            titles.add("Card Balance");
+
+            List<String> amounts = new ArrayList<>();
+
+            amounts.add(
+                    String.format("%.2f %s",
+                            convertedTotal,
+                            symbol)
+            );
+
+            amounts.add(
+                    String.format("%.2f %s",
+                            convertedCash,
+                            symbol)
+            );
+
+            amounts.add(
+                    String.format("%.2f %s",
+                            convertedCard,
+                            symbol)
+            );
+
             runOnUiThread(() -> {
-                tvBalance.setText(
-                        String.format("%.2f %s",
-                                finalConverted,
-                                finalSymbol)
-                );
+
+                BalancePagerAdapter adapter =
+                        new BalancePagerAdapter(
+                                titles,
+                                amounts
+                        );
+                balancePager.setAdapter(adapter);
             });
         }).start();
     }

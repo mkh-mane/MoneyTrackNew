@@ -20,7 +20,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardBalance"
                 android:layout_width="match_parent"
-                android:layout_height="130dp"
+                android:layout_height="170dp"
                 android:layout_margin="16dp"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="6dp">
@@ -31,21 +31,28 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Balance Overview"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
+                    <!--                    <TextView-->
+                    <!--                        android:layout_width="wrap_content"-->
+                    <!--                        android:layout_height="wrap_content"-->
+                    <!--                        android:text="Balance Overview"-->
+                    <!--                        android:textSize="18sp"-->
+                    <!--                        android:textStyle="bold" />-->
 
-                    <TextView
-                        android:id="@+id/tvBalance"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="$0"
-                        android:textSize="30sp"
-                        android:textStyle="bold" />
+                    <!--                    <TextView-->
+                    <!--                        android:id="@+id/tvBalance"-->
+                    <!--                        android:layout_width="wrap_content"-->
+                    <!--                        android:layout_height="wrap_content"-->
+                    <!--                        android:layout_marginTop="10dp"-->
+                    <!--                        android:text="$0"-->
+                    <!--                        android:textSize="30sp"-->
+                    <!--                        android:textStyle="bold" />-->
+
+
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/balancePager"
+                        android:layout_width="match_parent"
+                        android:layout_height="110dp"
+                        android:layout_margin="16dp" />
 
                 </LinearLayout>
 
