@@ -16,7 +16,8 @@ public class TransactionEntity {
     public long date;
     public String note;
     public String source;
-    public String icon; // ✅ emoji
+    public String icon;
+    public String accountName;
 
     public TransactionEntity() {}
 
@@ -33,6 +34,27 @@ public class TransactionEntity {
         this.userId = userId;
         this.source = source;
         this.icon = icon;
+    }
+
+    public TransactionEntity(double amount,
+                             String category,
+                             String type,
+                             long date,
+                             String note,
+                             String userId,
+                             String source,
+                             String icon,
+                             String accountName) {
+
+        this.amount = amount;
+        this.category = category;
+        this.type = type;
+        this.date = date;
+        this.note = note;
+        this.userId = userId;
+        this.source = source;
+        this.icon = icon;
+        this.accountName = accountName;
     }
 
     // 🔥 fallback constructor (icon default)

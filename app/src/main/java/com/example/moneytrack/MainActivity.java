@@ -27,6 +27,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.example.moneytrack.data.db.AccountDao;
+import com.example.moneytrack.data.db.AccountEntity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
@@ -58,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
     private MaterialButton btnIncome, btnExpense, btnHistory, btnVoice, btnScan;
     private AppDatabase database;
     private TransactionDao transactionDao;
+    private AccountDao accountDao;
     private FirebaseFirestore firestore;
     private FirebaseAuth auth;
     private String currentPhotoPath;
@@ -104,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
 
         database = AppDatabase.getInstance(this);
         transactionDao = database.transactionDao();
+        accountDao = database.accountDao();
 
         calculateAndUpdateBalance();
 
@@ -222,102 +226,179 @@ protected void onResume() {
         EditText etAmount = view.findViewById(R.id.etAmountIncome);
         Button btnSave = view.findViewById(R.id.btnSaveIncome);
 
-        //  SOURCE
+        // SOURCE
         final String[] selectedSource = {"Cash"};
 
-        LinearLayout srcCash = view.findViewById(R.id.srcCashIncome);
-        LinearLayout srcCard = view.findViewById(R.id.srcCardIncome);
-
+        // ACCOUNT
+        final String[] selectedAccount = {"Cash"};
+        LinearLayout accountContainer = view.findViewById(R.id.accountContainer);
+        LinearLayout srcCash = view.findViewById(R.id.srcCash);
+        LinearLayout srcCard = view.findViewById(R.id.srcCard);
         View[] allSources = {srcCash, srcCard};
+
 
         srcCash.setOnClickListener(v -> {
             selectedSource[0] = "Cash";
+            selectedAccount[0] = "Cash";
             highlightSelected(srcCash, allSources);
+            clearAccountSelection(accountContainer);
         });
-
         srcCard.setOnClickListener(v -> {
             selectedSource[0] = "Card";
+            selectedAccount[0] = "Card";
             highlightSelected(srcCard, allSources);
+            clearAccountSelection(accountContainer);
         });
 
-        //  CATEGORY + ICON
+
+        // CATEGORY
         final String[] selectedCategory = {"Salary"};
-        final String[] selectedIcon = {"💰"}; // 🔥 default icon
+        final String[] selectedIcon = {"💰"};
+
+
+        // LOAD ACCOUNTS
+
+        new Thread(() -> {
+            List<AccountEntity> accounts = accountDao.getAllAccounts();
+
+            runOnUiThread(() -> {
+                for(AccountEntity account : accounts){
+                    LinearLayout item = new LinearLayout(this);
+                    item.setOrientation(LinearLayout.VERTICAL);
+                    item.setGravity(Gravity.CENTER);
+                    item.setPadding(20, 20, 20, 20);
+
+                    ImageView image = new ImageView(this);
+                    image.setImageResource(R.drawable.ic_wallet);
+                    image.setBackgroundResource(R.drawable.bg_circle);
+
+                    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(100, 100);
+                    image.setLayoutParams(params);
+
+                    TextView text = new TextView(this);
+                    text.setText(account.name);
+                    item.addView(image);
+                    item.addView(text);
+
+
+                    item.setOnClickListener(v -> {
+                        selectedAccount[0] = account.name;
+                        selectedSource[0] = account.name;
+                        clearAccountSelection(accountContainer);
+                        item.setBackgroundResource(R.drawable.selected_background);
+                        for(View source : allSources){
+                            source.setBackground(null);
+                        }
+                    });
+                    accountContainer.addView(item);
+                }
+            });
+        }).start();
+
+
+
+        // CATEGORIES
 
         LinearLayout catSalary = view.findViewById(R.id.catSalary);
-        LinearLayout catBonus = view.findViewById(R.id.catBonus);
-        LinearLayout catOther = view.findViewById(R.id.catOtherIncome);
-        LinearLayout catAdd = view.findViewById(R.id.catAddIncome);
-        LinearLayout categoryContainer = view.findViewById(R.id.categoryContainerIncome);
+        LinearLayout catBusiness = view.findViewById(R.id.catBonus);
+        LinearLayout catGift = view.findViewById(R.id.catOther);
 
-        View[] staticCats = {catSalary, catBonus, catOther};
+        LinearLayout catAdd = view.findViewById(R.id.catAdd);
 
-        //  STATIC CATEGORY-ներ (icon-ով)
+        LinearLayout categoryContainer = view.findViewById(R.id.categoryContainer);
+        View[] staticCats = {catSalary, catBusiness, catGift};
         catSalary.setOnClickListener(v -> {
             selectedCategory[0] = "Salary";
             selectedIcon[0] = "💰";
             highlightAllCategories(catSalary, categoryContainer, staticCats);
         });
 
-        catBonus.setOnClickListener(v -> {
-            selectedCategory[0] = "Bonus";
+
+        catBusiness.setOnClickListener(v -> {
+            selectedCategory[0] = "Business";
+            selectedIcon[0] = "📈";
+            highlightAllCategories(catBusiness, categoryContainer, staticCats);
+        });
+
+        catGift.setOnClickListener(v -> {
+            selectedCategory[0] = "Gift";
             selectedIcon[0] = "🎁";
-            highlightAllCategories(catBonus, categoryContainer, staticCats);
+            highlightAllCategories(catGift, categoryContainer, staticCats);
         });
 
-        catOther.setOnClickListener(v -> {
-            selectedCategory[0] = "Other";
-            selectedIcon[0] = "📦";
-            highlightAllCategories(catOther, categoryContainer, staticCats);
-        });
 
-        // LOAD SAVED (icon-ներով)
         List<String> savedCats = loadCategories("income_categories");
-        for (String cat : savedCats) {
-            addCategoryView(cat, categoryContainer, selectedCategory, selectedIcon, staticCats, catAdd);
+        for(String cat : savedCats){
+            addCategoryView(
+                    cat,
+                    categoryContainer,
+                    selectedCategory,
+                    selectedIcon,
+                    staticCats,
+                    catAdd
+            );
         }
 
-        // ADD NEW (icon picker-ով)
-        catAdd.setOnClickListener(v -> showAddCategoryDialog(
-                "income_categories",
-                categoryContainer,
-                selectedCategory,
-                selectedIcon,
-                staticCats,
-                catAdd
-        ));
+
+        catAdd.setOnClickListener(v ->
+                showAddCategoryDialog(
+                        "income_categories",
+                        categoryContainer,
+                        selectedCategory,
+                        selectedIcon,
+                        staticCats,
+                        catAdd
+                )
+        );
+
 
         // SAVE
         btnSave.setOnClickListener(v -> {
             String value = etAmount.getText().toString().trim();
-            if (!value.isEmpty()) {
+            if(!value.isEmpty()){
                 double enteredAmount = Double.parseDouble(value);
-                SharedPreferences prefs = getSharedPreferences("settings",MODE_PRIVATE);
+                SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
                 String currency = prefs.getString("currency", "AMD ֏");
                 double amount = convertToAMD(enteredAmount, currency);
                 String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
                 TransactionEntity transaction = new TransactionEntity(
-                        amount,
-                        selectedCategory[0],
-                        "INCOME",
-                        System.currentTimeMillis(),
-                        "",
-                        userId,
-                        selectedSource[0],
-                        selectedIcon[0]
-                );
+                                amount,
+                                selectedCategory[0],
+                                "INCOME",
+                                System.currentTimeMillis(),
+                                "",
+                                userId,
+                                selectedSource[0],
+                                selectedIcon[0],
+                                selectedAccount[0]
+                        );
 
                 new Thread(() -> {
                     transactionDao.insert(transaction);
 
-                    FirebaseFirestore.getInstance()
-                            .collection("transactions")
-                            .add(transaction);
-                    runOnUiThread(this::calculateAndUpdateBalance);
+                    FirebaseFirestore
+                            .getInstance()
+                            .collection(
+                                    "transactions"
+                            )
+                            .add(
+                                    transaction
+                            );
+
+                    runOnUiThread(
+                            this::calculateAndUpdateBalance
+                    );
+
                 }).start();
                 dialog.dismiss();
-            } else {
-                Toast.makeText(this, "Enter amount", Toast.LENGTH_SHORT).show();
+
+            }
+            else{
+                Toast.makeText(
+                        this,
+                        "Enter amount",
+                        Toast.LENGTH_SHORT
+                ).show();
             }
         });
         dialog.show();
@@ -335,25 +416,80 @@ protected void onResume() {
         // SOURCE
         final String[] selectedSource = {"Cash"};
 
+        // ACCOUNT
+        final String[] selectedAccount = {"Cash"};
+        LinearLayout accountContainer = view.findViewById(R.id.accountContainer);
         LinearLayout srcCash = view.findViewById(R.id.srcCash);
         LinearLayout srcCard = view.findViewById(R.id.srcCard);
-
         View[] allSources = {srcCash, srcCard};
 
+
+        // Cash selected
         srcCash.setOnClickListener(v -> {
+            selectedAccount[0] = "Cash";
             selectedSource[0] = "Cash";
             highlightSelected(srcCash, allSources);
+            clearAccountSelection(accountContainer);
         });
 
+        // Card selected
         srcCard.setOnClickListener(v -> {
+            selectedAccount[0] = "Card";
             selectedSource[0] = "Card";
             highlightSelected(srcCard, allSources);
+            clearAccountSelection(accountContainer);
         });
 
         // CATEGORY
         final String[] selectedCategory = {"Food"};
-        final String[] selectedIcon = {"🍔"}; // 🔥 default
+        final String[] selectedIcon = {"🍔"};
 
+
+        // LOAD ACCOUNTS
+        new Thread(() -> {
+            List<AccountEntity> accounts = accountDao.getAllAccounts();
+            runOnUiThread(() -> {
+                for(AccountEntity account : accounts){
+                    LinearLayout item = new LinearLayout(this);
+                    item.setOrientation(LinearLayout.VERTICAL);
+                    item.setGravity(Gravity.CENTER);
+                    item.setPadding(20, 20, 20, 20);
+                    ImageView image = new ImageView(this);
+                    image.setImageResource(R.drawable.ic_wallet);
+                    image.setBackgroundResource(R.drawable.bg_circle);
+
+                    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(100, 100);
+                    image.setLayoutParams(params);
+
+                    TextView text = new TextView(this);
+                    text.setText(account.name);
+
+                    item.addView(image);
+                    item.addView(text);
+
+                    item.setOnClickListener(v -> {
+                        selectedAccount[0] = account.name;
+                        selectedSource[0] = account.name;
+                        clearAccountSelection(accountContainer);
+
+                        item.setBackgroundResource(R.drawable.selected_background);
+
+                        // Remove Cash/Card selection
+                        for(View source : allSources){
+                            source.setBackground(
+                                    null
+                            );
+                        }
+                    });
+                    accountContainer.addView(item);
+                }
+
+            });
+
+        }).start();
+
+
+        // CATEGORIES
         LinearLayout catFood = view.findViewById(R.id.catFood);
         LinearLayout catTransport = view.findViewById(R.id.catTransport);
         LinearLayout catShopping = view.findViewById(R.id.catShopping);
@@ -379,40 +515,58 @@ protected void onResume() {
             highlightAllCategories(catShopping, categoryContainer, staticCats);
         });
 
-        // LOAD SAVED
+
+        // LOAD SAVED CATEGORIES
         List<String> savedCats = loadCategories("expense_categories");
-        for (String cat : savedCats) {
-            addCategoryView(cat, categoryContainer, selectedCategory, selectedIcon, staticCats, catAdd);
+        for(String cat : savedCats){
+            addCategoryView(
+                    cat,
+                    categoryContainer,
+                    selectedCategory,
+                    selectedIcon,
+                    staticCats,
+                    catAdd
+            );
         }
 
-        // ADD NEW
-        catAdd.setOnClickListener(v -> showAddCategoryDialog(
-                "expense_categories",
-                categoryContainer,
-                selectedCategory,
-                selectedIcon,
-                staticCats,
-                catAdd
-        ));
+
+        catAdd.setOnClickListener(v ->
+                showAddCategoryDialog(
+                        "expense_categories",
+                        categoryContainer,
+                        selectedCategory,
+                        selectedIcon,
+                        staticCats,
+                        catAdd
+                )
+        );
+
 
         // SAVE
         btnSave.setOnClickListener(v -> {
             String value = etAmount.getText().toString().trim();
-            if (!value.isEmpty()) {
+            if(!value.isEmpty()){
                 double enteredAmount = Double.parseDouble(value);
-                SharedPreferences prefs = getSharedPreferences("settings",MODE_PRIVATE);
+                SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
                 String currency = prefs.getString("currency", "AMD ֏");
-                double amount = convertToAMD(enteredAmount, currency);                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                TransactionEntity transaction = new TransactionEntity(
-                        amount,
-                        selectedCategory[0],
-                        "EXPENSE",
-                        System.currentTimeMillis(),
-                        "",
-                        userId,
-                        selectedSource[0],
-                        selectedIcon[0] // ✅ հիմա ճիշտ կպահվի
-                );
+                double amount = convertToAMD(enteredAmount, currency);
+                String userId = FirebaseAuth
+                                .getInstance()
+                                .getCurrentUser()
+                                .getUid();
+
+                TransactionEntity transaction =
+                        new TransactionEntity(
+                                amount,
+                                selectedCategory[0],
+                                "EXPENSE",
+                                System.currentTimeMillis(),
+                                "",
+                                userId,
+                                selectedSource[0],
+                                selectedIcon[0],
+                                selectedAccount[0]
+                        );
 
                 new Thread(() -> {
                     transactionDao.insert(transaction);
@@ -424,10 +578,26 @@ protected void onResume() {
                 }).start();
                 dialog.dismiss();
             } else {
-                Toast.makeText(this, "Enter amount", Toast.LENGTH_SHORT).show();
+
+                Toast.makeText(
+                        this,
+                        "Enter amount",
+                        Toast.LENGTH_SHORT
+                ).show();
+
             }
         });
         dialog.show();
+    }
+
+
+
+
+    private void clearAccountSelection(LinearLayout accountContainer){
+        for(int i = 0; i < accountContainer.getChildCount(); i++){
+            View child = accountContainer.getChildAt(i);
+            child.setBackground(null);
+        }
     }
 
 
@@ -530,13 +700,12 @@ protected void onResume() {
                 if ("Cash".equals(t.source)) {
                     cash += value;
                 }
-
                 else if ("Card".equals(t.source)) {
                     card += value;
                 }
             }
 
-            SharedPreferences prefs = getSharedPreferences("settings",MODE_PRIVATE);
+            SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
             String currency = prefs.getString("currency", "AMD ֏");
 
             String symbol = "֏";
@@ -546,46 +715,157 @@ protected void onResume() {
                 symbol = "€";
             else if (currency.contains("₽"))
                 symbol = "₽";
-            double convertedTotal = CurrencyUtils.convert(total,currency);
-            double convertedCash = CurrencyUtils.convert(cash,currency);
-            double convertedCard = CurrencyUtils.convert(card,currency);
 
-            List<String> titles = new ArrayList<>();
+            double convertedTotal =
+                    CurrencyUtils.convert(
+                            total,
+                            currency
+                    );
 
-            titles.add("Total Balance");
-            titles.add("Cash Balance");
-            titles.add("Card Balance");
+            double convertedCash =
+                    CurrencyUtils.convert(
+                            cash,
+                            currency
+                    );
 
-            List<String> amounts = new ArrayList<>();
+            double convertedCard =
+                    CurrencyUtils.convert(
+                            card,
+                            currency
+                    );
 
-            amounts.add(
-                    String.format("%.2f %s",
-                            convertedTotal,
-                            symbol)
+
+            List<AccountEntity> accounts = accountDao.getAllAccounts();
+            List<BalanceItem> balanceItems = new ArrayList<>();
+
+            balanceItems.add(
+                    new BalanceItem(
+                            "Total Balance",
+                            String.format(
+                                    "%.2f %s",
+                                    convertedTotal,
+                                    symbol
+                            ),
+                            false
+                    )
             );
 
-            amounts.add(
-                    String.format("%.2f %s",
-                            convertedCash,
-                            symbol)
+            balanceItems.add(
+                    new BalanceItem(
+                            "Cash Balance",
+                            String.format(
+                                    "%.2f %s",
+                                    convertedCash,
+                                    symbol
+                            ),
+                            false
+                    )
+            );
+            balanceItems.add(
+                    new BalanceItem(
+                            "Card Balance",
+                            String.format(
+                                    "%.2f %s",
+                                    convertedCard,
+                                    symbol
+                            ),
+                            false
+                    )
             );
 
-            amounts.add(
-                    String.format("%.2f %s",
-                            convertedCard,
-                            symbol)
+
+            // User Accounts
+            for(AccountEntity account : accounts){
+                double accountBalance = 0;
+                for(TransactionEntity t : list){
+                    if(java.util.Objects.equals(
+                            account.name,
+                            t.accountName
+                    )){
+                        double value =
+                                t.type.equals("INCOME")
+                                        ? t.amount
+                                        : -t.amount;
+
+                        accountBalance += value;
+                    }
+                }
+
+                double convertedAccount =
+                        CurrencyUtils.convert(
+                                accountBalance,
+                                currency
+                        );
+
+                balanceItems.add(
+                        new BalanceItem(
+                                account.name,
+                                String.format(
+                                        "%.2f %s",
+                                        convertedAccount,
+                                        symbol
+                                ),
+                                false
+                        )
+                );
+            }
+
+            // Add Account
+            balanceItems.add(
+                    new BalanceItem(
+                            "Add Account",
+                            "",
+                            true
+                    )
             );
 
             runOnUiThread(() -> {
 
                 BalancePagerAdapter adapter =
                         new BalancePagerAdapter(
-                                titles,
-                                amounts
+                                balanceItems,
+                                MainActivity.this
                         );
                 balancePager.setAdapter(adapter);
             });
         }).start();
+    }
+
+
+
+    void showAddAccountDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("New Account");
+        EditText input = new EditText(this);
+        input.setHint("Account name");
+        builder.setView(input);
+        builder.setPositiveButton("Add",
+                (dialog, which) -> {
+                    String accountName =
+                            input.getText()
+                                    .toString()
+                                    .trim();
+                    if (!accountName.isEmpty()) {
+                        new Thread(() -> {
+                            AccountEntity account = new AccountEntity(accountName);
+                            accountDao.insert(account);
+                            runOnUiThread(() -> {
+                                Toast.makeText(
+                                        this,
+                                        "Account created",
+                                        Toast.LENGTH_SHORT
+                                ).show();
+                                calculateAndUpdateBalance();
+                            });
+
+                        }).start();
+                    }
+                });
+        builder.setNegativeButton(
+                "Cancel",
+                null
+        );
+        builder.show();
     }
 
     private void highlightSelected(View selected, View[] all) {

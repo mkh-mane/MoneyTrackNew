@@ -22,49 +22,72 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
+        <!-- Cash + Card -->
         <LinearLayout
-            android:id="@+id/srcCash"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_margin="8dp"
-            android:orientation="vertical"
-            android:gravity="center">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/ic_cash"
-                android:background="@drawable/bg_circle"/>
-
-            <TextView
-                android:text="Cash"
+            <LinearLayout
+                android:id="@+id/srcCash"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_width="wrap_content"/>
+                android:layout_weight="1"
+                android:layout_margin="8dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_cash"
+                    android:background="@drawable/bg_circle"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cash"/>
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:id="@+id/srcCard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_margin="8dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_card"
+                    android:background="@drawable/bg_circle"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Card"/>
+            </LinearLayout>
+
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/srcCard"
-            android:layout_width="0dp"
+        <!-- Custom Accounts -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_margin="8dp"
-            android:orientation="vertical"
-            android:gravity="center">
+            android:scrollbars="none">
 
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/ic_card"
-                android:background="@drawable/bg_circle"/>
-
-            <TextView
-                android:text="Card"
+            <LinearLayout
+                android:id="@+id/accountContainer"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_width="wrap_content"/>
-        </LinearLayout>
+                android:orientation="horizontal"/>
+        </HorizontalScrollView>
 
     </LinearLayout>
 
@@ -185,57 +208,6 @@
         android:layout_marginTop="16dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
-
-<!--    &lt;!&ndash; Category &ndash;&gt;-->
-<!--    <GridLayout-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:columnCount="4"-->
-<!--        android:layout_marginTop="16dp">-->
-
-<!--        &lt;!&ndash; Food &ndash;&gt;-->
-<!--        <LinearLayout-->
-<!--            android:orientation="vertical"-->
-<!--            android:gravity="center"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:padding="8dp">-->
-
-<!--            <ImageView-->
-<!--                android:id="@+id/catFood"-->
-<!--                android:layout_width="60dp"-->
-<!--                android:layout_height="60dp"-->
-<!--                android:src="@drawable/ic_food"-->
-<!--                android:background="@drawable/bg_circle"-->
-<!--                android:padding="12dp"/>-->
-
-<!--            <TextView-->
-<!--                android:text="Food"-->
-<!--                android:textSize="12sp"/>-->
-<!--        </LinearLayout>-->
-
-<!--        &lt;!&ndash; Transport &ndash;&gt;-->
-<!--        <LinearLayout-->
-<!--            android:orientation="vertical"-->
-<!--            android:gravity="center"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:padding="8dp">-->
-
-<!--            <ImageView-->
-<!--                android:id="@+id/catTransport"-->
-<!--                android:layout_width="60dp"-->
-<!--                android:layout_height="60dp"-->
-<!--                android:src="@drawable/ic_transport"-->
-<!--                android:background="@drawable/bg_circle"-->
-<!--                android:padding="12dp"/>-->
-
-<!--            <TextView-->
-<!--                android:text="Transport"-->
-<!--                android:textSize="12sp"/>-->
-<!--        </LinearLayout>-->
-
-<!--    </GridLayout>-->
 
     <!-- Save -->
     <Button

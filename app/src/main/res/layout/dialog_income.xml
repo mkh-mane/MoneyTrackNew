@@ -1,199 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="20dp">
 
-    <!-- TITLE -->
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Income"
+        android:text="Add Income"
         android:textSize="20sp"
-        android:textStyle="bold"/>
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
 
     <TextView
         android:text="From"
         android:textStyle="bold"
         android:layout_marginTop="12dp"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"/>
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical">
+
+        <!-- Cash + Card -->
 
         <LinearLayout
-            android:id="@+id/srcCashIncome"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="8dp">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <ImageView
-                android:src="@drawable/ic_cash"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@drawable/bg_circle"/>
-
-            <TextView
-                android:text="Cash"
+            <LinearLayout
+                android:id="@+id/srcCash"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_width="wrap_content"/>
+                android:layout_weight="1"
+                android:layout_margin="8dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_cash"
+                    android:background="@drawable/bg_circle"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cash"/>
+
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:id="@+id/srcCard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_margin="8dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_card"
+                    android:background="@drawable/bg_circle"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Card"/>
+
+            </LinearLayout>
+
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/srcCardIncome"
-            android:layout_width="0dp"
+
+        <!-- Custom Accounts -->
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="8dp">
+            android:scrollbars="none">
 
-            <ImageView
-                android:src="@drawable/ic_card"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@drawable/bg_circle"/>
-
-            <TextView
-                android:text="Card"
+            <LinearLayout
+                android:id="@+id/accountContainer"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_width="wrap_content"/>
-        </LinearLayout>
+                android:orientation="horizontal"/>
+
+        </HorizontalScrollView>
 
     </LinearLayout>
 
 
 
-    <!-- CATEGORY -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="To"
-        android:layout_marginTop="16dp"/>
+        android:text="Category"
+        android:textStyle="bold"
+        android:layout_marginTop="10dp"/>
+
 
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-    <LinearLayout
-        android:id="@+id/categoryContainerIncome"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <!-- SALARY -->
         <LinearLayout
-            android:id="@+id/catSalary"
-            android:layout_width="80dp"
+            android:id="@+id/categoryContainer"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="8dp">
+            android:orientation="horizontal">
 
-            <ImageView
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:src="@drawable/ic_money"
-                android:background="@drawable/bg_circle"/>
 
-            <TextView
-                android:text="Salary"
-                android:textSize="12sp"
+            <!-- Salary -->
+
+            <LinearLayout
+                android:id="@+id/catSalary"
+                android:layout_width="80dp"
                 android:layout_height="wrap_content"
-                android:layout_width="wrap_content"/>
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp">
+
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/ic_money"
+                    android:background="@drawable/bg_circle"/>
+
+                <TextView
+                    android:text="Salary"
+                    android:textSize="12sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+            </LinearLayout>
+
+
+            <!-- Business -->
+
+            <LinearLayout
+                android:id="@+id/catBonus"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp">
+
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/ic_money"
+                    android:background="@drawable/bg_circle"/>
+
+                <TextView
+                    android:text="Bonus"
+                    android:textSize="12sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+            </LinearLayout>
+
+
+            <!-- Gift -->
+
+            <LinearLayout
+                android:id="@+id/catOther"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp">
+
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/ic_money"
+                    android:background="@drawable/bg_circle"/>
+
+                <TextView
+                    android:text="Other"
+                    android:textSize="12sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+            </LinearLayout>
+
+
+            <!-- Add -->
+
+            <LinearLayout
+                android:id="@+id/catAdd"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp">
+
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@android:drawable/ic_input_add"
+                    android:background="@drawable/bg_circle"/>
+
+                <TextView
+                    android:text="Add"
+                    android:textSize="12sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+            </LinearLayout>
+
         </LinearLayout>
 
-        <!-- BONUS -->
-        <LinearLayout
-            android:id="@+id/catBonus"
-            android:layout_width="80dp"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="8dp">
-
-            <ImageView
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:src="@drawable/ic_money"
-                android:background="@drawable/bg_circle"/>
-
-            <TextView
-                android:text="Bonus"
-                android:textSize="12sp"
-                android:layout_height="wrap_content"
-                android:layout_width="wrap_content"/>
-        </LinearLayout>
-
-        <!-- OTHER -->
-        <LinearLayout
-            android:id="@+id/catOtherIncome"
-            android:layout_width="80dp"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="8dp">
-
-            <ImageView
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:src="@drawable/ic_money"
-                android:background="@drawable/bg_circle"/>
-
-            <TextView
-                android:text="Other"
-                android:textSize="12sp"
-                android:layout_height="wrap_content"
-                android:layout_width="wrap_content"/>
-        </LinearLayout>
-
-        <!-- ADD -->
-        <LinearLayout
-            android:id="@+id/catAddIncome"
-            android:layout_width="80dp"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="8dp">
-
-            <ImageView
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:src="@android:drawable/ic_input_add"
-                android:background="@drawable/bg_circle"/>
-
-            <TextView
-                android:text="Add"
-                android:textSize="12sp"
-                android:layout_height="wrap_content"
-                android:layout_width="wrap_content"/>
-        </LinearLayout>
-
-    </LinearLayout>
     </HorizontalScrollView>
 
 
-    <!-- AMOUNT -->
+    <!-- Amount -->
+
     <EditText
         android:id="@+id/etAmountIncome"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:hint="Enter amount"
         android:inputType="numberDecimal"
-        android:layout_marginTop="12dp"/>
+        android:layout_marginTop="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 
-    <!-- SAVE -->
+
+    <!-- Save -->
+
     <Button
         android:id="@+id/btnSaveIncome"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:text="Save"
-        android:layout_marginTop="20dp"/>
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 
 </LinearLayout>

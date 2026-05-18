@@ -46,7 +46,11 @@ import androidx.room.RoomDatabase;
 import com.example.moneytrack.data.user.UserDao;
 import com.example.moneytrack.data.user.UserEntity;
 
-@Database(entities = {TransactionEntity.class,UserEntity.class, GoalEntity.class}, version = 2)
+@Database(entities = {TransactionEntity.class,
+        UserEntity.class,
+        GoalEntity.class,
+        AccountEntity.class},
+        version = 3)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static AppDatabase instance;
@@ -54,6 +58,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract TransactionDao transactionDao();
     public abstract UserDao userDao();
     public abstract GoalDao goalDao();
+    public abstract AccountDao accountDao();
 
     public static synchronized AppDatabase getInstance(Context context) {
 
