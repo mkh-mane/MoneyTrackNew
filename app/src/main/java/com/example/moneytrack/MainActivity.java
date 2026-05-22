@@ -15,8 +15,12 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
 
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -33,6 +37,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.TextRecognition;
@@ -57,7 +62,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity {
 
     private TextView tvBalance;
-    private MaterialButton btnIncome, btnExpense, btnHistory, btnVoice, btnScan;
+    private MaterialButton btnIncome, btnExpense, btnHistory, btnVoice, btnScan, btnTransfer;
     private AppDatabase database;
     private TransactionDao transactionDao;
     private AccountDao accountDao;
@@ -104,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
         btnHistory = findViewById(R.id.btnHistory);
         btnVoice = findViewById(R.id.btnVoice);
         btnScan = findViewById(R.id.btnScan);
+        btnTransfer = findViewById(R.id.btnTransfer);
 
         database = AppDatabase.getInstance(this);
         transactionDao = database.transactionDao();
@@ -113,6 +119,11 @@ public class MainActivity extends AppCompatActivity {
 
         btnIncome.setOnClickListener(v -> showIncomeDialog());
         btnExpense.setOnClickListener(v -> showExpenseDialog());
+
+        btnTransfer.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, TransferActivity.class)
+            );
+        });
 
         if (btnHistory != null) {
             btnHistory.setOnClickListener(v ->
@@ -207,15 +218,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-@Override
-protected void onResume() {
-    super.onResume();
+    @Override
+    protected void onResume() {
+        super.onResume();
+        calculateAndUpdateBalance();
 
-    BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
-    if (bottomNav != null) {
-        bottomNav.setSelectedItemId(R.id.nav_home);
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        if(bottomNav != null){
+            bottomNav.setSelectedItemId(R.id.nav_home);
+        }
     }
-}
 
 
     private void showIncomeDialog() {
@@ -689,84 +701,100 @@ protected void onResume() {
 
     private void calculateAndUpdateBalance() {
         new Thread(() -> {
-            List<TransactionEntity> list =
-                    transactionDao.getAllTransactions();
-            double total = 0;
-            double cash = 0;
-            double card = 0;
-            for (TransactionEntity t : list) {
-                double value = t.type.equals("INCOME") ? t.amount : -t.amount;
-                total += value;
-                if ("Cash".equals(t.source)) {
-                    cash += value;
-                }
-                else if ("Card".equals(t.source)) {
-                    card += value;
-                }
+            List<TransactionEntity> list = transactionDao.getAllTransactions();
+            double totalAMD = 0;
+            double cashAMD = 0;
+            double cardAMD = 0;
+            for(TransactionEntity t:list){
+
+                double amountAMD =
+                        convertToAMD(
+                                t.amount,
+                                getAccountCurrency(t.accountName)
+                        );
+
+                double value =
+                        t.type.equals("INCOME")
+                                ? amountAMD
+                                : -amountAMD;
+
+                totalAMD += value;
+
+                if("Cash".equals(t.accountName))
+                    cashAMD += value;
+
+                else if("Card".equals(t.accountName))
+                    cardAMD += value;
             }
 
-            SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
-            String currency = prefs.getString("currency", "AMD ֏");
-
-            String symbol = "֏";
-            if (currency.contains("$"))
-                symbol = "$";
-            else if (currency.contains("€"))
-                symbol = "€";
-            else if (currency.contains("₽"))
-                symbol = "₽";
-
-            double convertedTotal =
-                    CurrencyUtils.convert(
-                            total,
-                            currency
+            SharedPreferences prefs =
+                    getSharedPreferences(
+                            "settings",
+                            MODE_PRIVATE
                     );
 
-            double convertedCash =
-                    CurrencyUtils.convert(
-                            cash,
-                            currency
+            String currency =
+                    prefs.getString(
+                            "currency",
+                            "AMD ֏"
                     );
 
-            double convertedCard =
-                    CurrencyUtils.convert(
-                            card,
-                            currency
-                    );
+            String symbol="֏";
+
+            if(currency.contains("$"))
+                symbol="$";
+            else if(currency.contains("€"))
+                symbol="€";
+            else if(currency.contains("₽"))
+                symbol="₽";
 
 
-            List<AccountEntity> accounts = accountDao.getAllAccounts();
-            List<BalanceItem> balanceItems = new ArrayList<>();
+            List<BalanceItem> balanceItems =
+                    new ArrayList<>();
 
+
+            // Total
             balanceItems.add(
                     new BalanceItem(
                             "Total Balance",
                             String.format(
                                     "%.2f %s",
-                                    convertedTotal,
+                                    CurrencyUtils.convert(
+                                            totalAMD,
+                                            currency
+                                    ),
                                     symbol
                             ),
                             false
                     )
             );
 
+            // Cash
             balanceItems.add(
                     new BalanceItem(
                             "Cash Balance",
                             String.format(
                                     "%.2f %s",
-                                    convertedCash,
+                                    CurrencyUtils.convert(
+                                            cashAMD,
+                                            currency
+                                    ),
                                     symbol
                             ),
                             false
                     )
             );
+
+            // Card
             balanceItems.add(
                     new BalanceItem(
                             "Card Balance",
                             String.format(
                                     "%.2f %s",
-                                    convertedCard,
+                                    CurrencyUtils.convert(
+                                            cardAMD,
+                                            currency
+                                    ),
                                     symbol
                             ),
                             false
@@ -774,14 +802,12 @@ protected void onResume() {
             );
 
 
-            // User Accounts
+            // Custom accounts
+            List<AccountEntity> accounts = accountDao.getAllAccounts();
             for(AccountEntity account : accounts){
                 double accountBalance = 0;
                 for(TransactionEntity t : list){
-                    if(java.util.Objects.equals(
-                            account.name,
-                            t.accountName
-                    )){
+                    if(account.name.equals(t.accountName)){
                         double value =
                                 t.type.equals("INCOME")
                                         ? t.amount
@@ -791,26 +817,30 @@ protected void onResume() {
                     }
                 }
 
-                double convertedAccount =
-                        CurrencyUtils.convert(
-                                accountBalance,
-                                currency
-                        );
+                String accountSymbol="֏";
+
+                if(account.currency.contains("$"))
+                    accountSymbol="$";
+
+                else if(account.currency.contains("€"))
+                    accountSymbol="€";
+
+                else if(account.currency.contains("₽"))
+                    accountSymbol="₽";
 
                 balanceItems.add(
                         new BalanceItem(
                                 account.name,
                                 String.format(
                                         "%.2f %s",
-                                        convertedAccount,
-                                        symbol
+                                        accountBalance,
+                                        accountSymbol
                                 ),
                                 false
                         )
                 );
             }
 
-            // Add Account
             balanceItems.add(
                     new BalanceItem(
                             "Add Account",
@@ -821,50 +851,125 @@ protected void onResume() {
 
             runOnUiThread(() -> {
 
-                BalancePagerAdapter adapter =
+                balancePager.setAdapter(
                         new BalancePagerAdapter(
                                 balanceItems,
                                 MainActivity.this
-                        );
-                balancePager.setAdapter(adapter);
+                        )
+                );
+
             });
         }).start();
     }
 
 
+    private String getAccountCurrency(String accountName){
+        if(accountName.equals("Cash"))
+            return "AMD ֏";
+        if(accountName.equals("Card"))
+            return "AMD ֏";
+        List<AccountEntity> accounts = accountDao.getAllAccounts();
+        for(AccountEntity account : accounts){
+            if(account.name.equals(accountName))
+                return account.currency;
+        }
+        return "AMD ֏";
+    }
+
+
 
     void showAddAccountDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("New Account");
+
+        AlertDialog.Builder builder =
+                new AlertDialog.Builder(this);
+
+        builder.setTitle("Create Account");
+
+        LinearLayout layout =
+                new LinearLayout(this);
+
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        layout.setPadding(
+                50,
+                30,
+                50,
+                10
+        );
+
         EditText input = new EditText(this);
-        input.setHint("Account name");
-        builder.setView(input);
-        builder.setPositiveButton("Add",
+        input.setHint("Account Name");
+        layout.addView(input);
+
+        Spinner spinner = new Spinner(this);
+        ArrayList<String> currencies = new ArrayList<>();
+
+        currencies.add("AMD ֏");
+        currencies.add("USD $");
+        currencies.add("EUR €");
+        currencies.add("RUB ₽");
+
+        ArrayAdapter<String> spinnerAdapter =
+                new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        currencies
+                );
+
+        spinnerAdapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
+
+        spinner.setAdapter(spinnerAdapter);
+        layout.addView(spinner);
+        builder.setView(layout);
+        builder.setPositiveButton(
+                "Create",
                 (dialog, which) -> {
-                    String accountName =
+
+                    String name =
                             input.getText()
                                     .toString()
                                     .trim();
-                    if (!accountName.isEmpty()) {
-                        new Thread(() -> {
-                            AccountEntity account = new AccountEntity(accountName);
-                            accountDao.insert(account);
-                            runOnUiThread(() -> {
-                                Toast.makeText(
-                                        this,
-                                        "Account created",
-                                        Toast.LENGTH_SHORT
-                                ).show();
-                                calculateAndUpdateBalance();
-                            });
 
-                        }).start();
+                    if(name.isEmpty()){
+
+                        Toast.makeText(
+                                this,
+                                "Enter name",
+                                Toast.LENGTH_SHORT
+                        ).show();
+
+                        return;
                     }
+
+                    String currency =
+                            spinner.getSelectedItem()
+                                    .toString();
+
+                    new Thread(() -> {
+
+                        AccountEntity account =
+                                new AccountEntity();
+
+                        account.name = name;
+                        account.currency = currency;
+
+                        accountDao.insert(account);
+
+                        runOnUiThread(
+                                this::calculateAndUpdateBalance
+                        );
+
+                    }).start();
+
                 });
+
         builder.setNegativeButton(
                 "Cancel",
                 null
         );
+
         builder.show();
     }
 
@@ -952,66 +1057,96 @@ protected void onResume() {
     private void processVoiceInput(String text) {
         text = text.toLowerCase();
         double amount = 0;
-        for (String word : text.split(" ")) {
-            try {
-                amount = Double.parseDouble(word.replace(",", "").replace(".", ""));
+        for(String word : text.split(" ")){
+            try{
+                amount = Double.parseDouble(
+                        word.replace(",", "")
+                                .replace(".", "")
+                );
                 break;
-            } catch (Exception ignored) {
             }
+            catch(Exception ignored){}
         }
-        if (amount == 0) return;
-        String type = text.contains("income") ? "INCOME" : "EXPENSE";
-        String source = "Cash"; // default
 
-        if (text.contains("card") || text.contains("visa") || text.contains("mastercard")) {
+        if(amount == 0)
+            return;
+        String type = text.contains("income") ? "INCOME" : "EXPENSE";
+        String source = "Cash";
+
+        if(text.contains("card")
+                || text.contains("visa")
+                || text.contains("mastercard")){
+
             source = "Card";
         }
 
         String category = "Other";
-        for (String word : text.split(" ")) {
-            word = word.replaceAll("[^a-z]", "");
-            if (!word.isEmpty()
+        for(String word : text.split(" ")){
+            word = word.replaceAll("[^a-z]","");
+            if(!word.isEmpty()
                     && !word.equals("spent")
                     && !word.equals("on")
                     && !word.equals("for")
-                    && !word.equals("the")
-                    && !word.equals("a")
-                    && !word.equals("i")
                     && !word.equals("income")
                     && !word.equals("expense")
                     && !word.equals("cash")
-                    && !word.equals("card")) {
+                    && !word.equals("card")){
                 category = word;
                 break;
             }
         }
 
-        category = category.substring(0, 1).toUpperCase() + category.substring(1);
+        category = category.substring(0,1).toUpperCase()
+                        + category.substring(1);
 
-        double finalAmount = amount;
-        String finalCategory = category;
-        String finalType = type;
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-        TransactionEntity transaction = new TransactionEntity(
-                finalAmount,
-                finalCategory,
-                finalType,
-                System.currentTimeMillis(),
-                "",
-                userId,
-                source
-        );
+        if(user == null){
+            Toast.makeText(
+                    this,
+                    "User not found",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        String userId = user.getUid();
+
+        TransactionEntity transaction =
+                new TransactionEntity(
+                        amount,
+                        category,
+                        type,
+                        System.currentTimeMillis(),
+                        "",
+                        userId,
+                        source,
+                        "🎤",
+                        source
+                );
+
+        transaction.currency =
+                source.equals("Cash")
+                        ? "AMD ֏"
+                        : "AMD ֏";
 
         new Thread(() -> {
-            // Room
             transactionDao.insert(transaction);
-            // Firebase
+
             FirebaseFirestore.getInstance()
                     .collection("transactions")
                     .add(transaction);
 
-            runOnUiThread(this::calculateAndUpdateBalance);
+            runOnUiThread(() -> {
+                calculateAndUpdateBalance();
+
+                Toast.makeText(
+                        this,
+                        "Added",
+                        Toast.LENGTH_SHORT
+                ).show();
+            });
+
         }).start();
     }
 

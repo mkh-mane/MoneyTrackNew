@@ -10,6 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.moneytrack.data.db.AccountEntity;
 import com.example.moneytrack.data.db.TransactionEntity;
 
 import java.text.SimpleDateFormat;
@@ -52,40 +53,70 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         TransactionEntity transaction = list.get(position);
 
         holder.tvType.setText(transaction.type);
-        holder.tvCategory.setText(
-                transaction.source + " → " + transaction.category
-        );
+        holder.tvCategory.setText(transaction.source + " → " + transaction.category);
 
-        SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy  HH:mm", Locale.getDefault());
-        String formattedDate = sdf.format(new Date(transaction.date));
+        SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
 
-        holder.tvDate.setText(formattedDate);
+        holder.tvDate.setText(sdf.format(new Date(transaction.date)));
 
-        //  currency settings
-        SharedPreferences prefs = holder.itemView.getContext().getSharedPreferences(
-                                "settings",
-                                Context.MODE_PRIVATE);
-
-        String currency = prefs.getString("currency", "AMD ֏");
-        // convert amount
-        double converted = CurrencyUtils.convert(transaction.amount, currency);
-
-        //  symbol
         String symbol = "֏";
-        if (currency.contains("$"))
-            symbol = "$";
-        else if (currency.contains("€"))
-            symbol = "€";
-        else if (currency.contains("₽"))
-            symbol = "₽";
+        double amount = transaction.amount;
+
+        SharedPreferences prefs =
+                holder.itemView.getContext()
+                        .getSharedPreferences(
+                                "settings",
+                                Context.MODE_PRIVATE
+                        );
+
+        String appCurrency = prefs.getString("currency", "AMD ֏");
+
+        // Transfer-ներ
+        if(transaction.category.equals("Transfer Out")
+                || transaction.category.equals("Transfer In")){
+            if(transaction.currency != null){
+                if(transaction.currency.contains("$"))
+                    symbol = "$";
+                else if(transaction.currency.contains("€"))
+                    symbol = "€";
+                else if(transaction.currency.contains("₽"))
+                    symbol = "₽";
+            }
+        }
+
+        // Սովորական Income / Expense
+        else{
+            amount = CurrencyUtils.convert(
+                            transaction.amount,
+                            appCurrency
+                    );
+            if(appCurrency.contains("$"))
+                symbol = "$";
+
+            else if(appCurrency.contains("€"))
+                symbol = "€";
+
+            else if(appCurrency.contains("₽"))
+                symbol = "₽";
+        }
 
         String prefix = transaction.type.equals("INCOME") ? "+ " : "- ";
-        //  set amount
-        holder.tvAmount.setText(prefix + String.format("%.2f %s",converted,symbol));
+
+        holder.tvAmount.setText(
+                prefix +
+                        String.format(
+                                Locale.getDefault(),
+                                "%.2f %s",
+                                amount,
+                                symbol
+                        )
+        );
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onTransactionClick(transaction);
+            if(listener != null){
+                listener.onTransactionClick(
+                        transaction
+                );
             }
         });
     }

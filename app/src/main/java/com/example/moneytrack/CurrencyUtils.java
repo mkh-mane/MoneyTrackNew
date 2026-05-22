@@ -15,4 +15,29 @@ public class CurrencyUtils {
                 return amount;
         }
     }
+
+    public static double convertBetweenAccounts(
+            double amount,
+            String fromCurrency,
+            String toCurrency){
+        double amd = convertToAMDStatic(
+                        amount,
+                        fromCurrency
+                );
+
+        return convert(amd, toCurrency);
+    }
+
+    private static double convertToAMDStatic(double amount, String currency){
+        if(currency.equals("USD $")){
+            return amount * 385;
+        }
+        if(currency.equals("EUR €")){
+            return amount * 430;
+        }
+        if(currency.equals("RUB ₽")){
+            return amount * 4.8;
+        }
+        return amount;
+    }
 }

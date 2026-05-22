@@ -45,9 +45,7 @@ public class BalancePagerAdapter extends RecyclerView.Adapter<BalancePagerAdapte
             holder.tvAmount.setText("+");
             holder.itemView.setOnClickListener(v -> {
                 if(context instanceof MainActivity){
-                    ((MainActivity) context)
-                            .showAddAccountDialog();
-
+                    ((MainActivity) context).showAddAccountDialog();
                 }
             });
         }

@@ -11,9 +11,20 @@ public class AccountEntity {
 
     public String name;
 
-    public AccountEntity() {}
+    public String currency;
 
     public AccountEntity(String name) {
         this.name = name;
+        this.currency = "AMD ֏";
+    }
+
+
+    public AccountEntity(String name, String currency) {
+        this.name = name;
+        this.currency = currency;
+    }
+
+    public AccountEntity() {
+
     }
 }

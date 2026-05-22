@@ -123,6 +123,16 @@
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTransfer"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_margin="16dp"
+                android:text="Transfer"
+                app:cornerRadius="12dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnHistory"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
