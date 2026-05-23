@@ -21,6 +21,7 @@ import android.widget.Spinner;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -706,23 +707,11 @@ public class MainActivity extends AppCompatActivity {
             double cashAMD = 0;
             double cardAMD = 0;
             for(TransactionEntity t:list){
-
-                double amountAMD =
-                        convertToAMD(
-                                t.amount,
-                                getAccountCurrency(t.accountName)
-                        );
-
-                double value =
-                        t.type.equals("INCOME")
-                                ? amountAMD
-                                : -amountAMD;
-
+                double amountAMD = convertToAMD(t.amount, getAccountCurrency(t.accountName));
+                double value = t.type.equals("INCOME") ? amountAMD : -amountAMD;
                 totalAMD += value;
-
                 if("Cash".equals(t.accountName))
                     cashAMD += value;
-
                 else if("Card".equals(t.accountName))
                     cardAMD += value;
             }
@@ -1096,9 +1085,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        category = category.substring(0,1).toUpperCase()
-                        + category.substring(1);
-
+        category = category.substring(0,1).toUpperCase() + category.substring(1);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
         if(user == null){
@@ -1125,10 +1112,7 @@ public class MainActivity extends AppCompatActivity {
                         source
                 );
 
-        transaction.currency =
-                source.equals("Cash")
-                        ? "AMD ֏"
-                        : "AMD ֏";
+        transaction.currency = source.equals("Cash") ? "AMD ֏" : "AMD ֏";
 
         new Thread(() -> {
             transactionDao.insert(transaction);
@@ -1195,37 +1179,44 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void extractAmount(String text) {
-        double bestAmount = 0;
+        ArrayList<Double> amounts = new ArrayList<>();
         String[] lines = text.split("\n");
-        for (String line : lines) {
-            String lower = line.toLowerCase();
-            if (lower.contains("total") ||
-                    lower.contains("amount") ||
-                    lower.contains("total:") ||
-                    lower.contains("итого") ||
-                    lower.contains("ընդամենը") ||
-                    lower.contains("Ընդամենը։")) {
+        for(String line : lines){
+            double value = extractNumberFromLine(line);
 
-                double value = extractNumberFromLine(line);
-
-                if (value > bestAmount) {
-                    bestAmount = value;
-                }
+            if(value > 20 && value < 1000000 && !amounts.contains(value)){
+                amounts.add(value);
             }
         }
-        if (bestAmount == 0) {
-            for (String line : lines) {
-                double value = extractNumberFromLine(line);
-                if (value > bestAmount && value < 1000000) {
-                    bestAmount = value;
-                }
-            }
+        Collections.sort(amounts, Collections.reverseOrder());
+        if(amounts.isEmpty()){
+            Toast.makeText(
+                    this,
+                    "Amount not found",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
         }
-        if (bestAmount > 0) {
-            showDetectedAmount(bestAmount);
-        } else {
-            Toast.makeText(this, "Amount not found", Toast.LENGTH_SHORT).show();
+        showAmountSelection(amounts);
+    }
+
+
+    private void showAmountSelection(ArrayList<Double> amounts){
+        String[] items = new String[amounts.size()];
+        for(int i=0;i<amounts.size();i++){
+            items[i]=String.format(
+                    "%.2f",
+                    amounts.get(i)
+            );
         }
+        new AlertDialog.Builder(this)
+                .setTitle("Choose amount 💰")
+                .setItems(items,
+                        (dialog,which)->{
+                            double selectedAmount = amounts.get(which);
+                            showDetectedAmount(selectedAmount);
+                        })
+                .show();
     }
 
 
@@ -1273,17 +1264,13 @@ public class MainActivity extends AppCompatActivity {
 
                 Uri photoURI = FileProvider.getUriForFile(
                         this,
-                        "com.example.moneytrack.fileprovider", // ⚠️ MUST MATCH MANIFEST
+                        "com.example.moneytrack.fileprovider",
                         photoFile
                 );
 
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-
-                // 🔥 կարևոր permission flag
                 intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-
                 cameraLauncher.launch(intent);
-
             } catch (IOException e) {
                 e.printStackTrace();
                 Toast.makeText(this, "Camera error", Toast.LENGTH_SHORT).show();
@@ -1305,12 +1292,12 @@ public class MainActivity extends AppCompatActivity {
 
         RadioButton rbCash = new RadioButton(this);
         rbCash.setText("Cash");
-        rbCash.setId(View.generateViewId()); // ✅ կարևոր
+        rbCash.setId(View.generateViewId());
         rbCash.setChecked(true);
 
         RadioButton rbCard = new RadioButton(this);
         rbCard.setText("Card");
-        rbCard.setId(View.generateViewId()); // ✅ կարևոր
+        rbCard.setId(View.generateViewId());
         radioGroup.addView(rbCash);
         radioGroup.addView(rbCard);
 
@@ -1327,25 +1314,53 @@ public class MainActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Detected Amount 💰")
                 .setView(layout)
-                .setPositiveButton("Add", (d, w) -> {
+                .setPositiveButton("Add",(d,w)->{
 
-                    String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    TransactionEntity transaction = new TransactionEntity(
-                            amount,
-                            "Receipt",
-                            "EXPENSE",
-                            System.currentTimeMillis(),
-                            "",
-                            userId,
-                            selectedSource[0]
-                    );
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    if(user == null){
+                        Toast.makeText(
+                                this,
+                                "User not found",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                        return;
+                    }
+
+                    String userId = user.getUid();
+                    TransactionEntity transaction =
+                            new TransactionEntity(
+                                    amount,
+                                    "Receipt",
+                                    "EXPENSE",
+                                    System.currentTimeMillis(),
+                                    "",
+                                    userId,
+                                    selectedSource[0],
+                                    "🧾",
+                                    selectedSource[0]
+                            );
+
+                    transaction.currency =
+                            selectedSource[0].equals("Cash")
+                                    ? getSharedPreferences("settings", MODE_PRIVATE
+                            ).getString("currency", "AMD ֏"
+                            ) : getSharedPreferences("settings", MODE_PRIVATE
+                            ).getString("currency", "AMD ֏");
 
                     new Thread(() -> {
                         transactionDao.insert(transaction);
                         FirebaseFirestore.getInstance()
                                 .collection("transactions")
                                 .add(transaction);
-                        runOnUiThread(this::calculateAndUpdateBalance);
+
+                        runOnUiThread(() -> {
+                            calculateAndUpdateBalance();
+                            Toast.makeText(
+                                    this,
+                                    "Added",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                        });
                     }).start();
                 })
                 .setNegativeButton("Cancel", null)

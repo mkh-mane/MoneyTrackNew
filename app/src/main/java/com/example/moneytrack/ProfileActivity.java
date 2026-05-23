@@ -47,27 +47,26 @@ public class ProfileActivity extends AppCompatActivity {
         bottomNav.setSelectedItemId(R.id.nav_profile);
 
         bottomNav.setOnItemSelectedListener(item -> {
-
-            if (item.getItemId() == R.id.nav_home) {
-                startActivity(new Intent(this, MainActivity.class));
+            Intent intent = null;
+            if(item.getItemId()==R.id.nav_home){
+                intent = new Intent(this,MainActivity.class);
+            }
+            else if(item.getItemId()==R.id.nav_analyze){
+                intent = new Intent(this,AnalyzeActivity.class);
+            }
+            else if(item.getItemId()==R.id.nav_history){
+                intent = new Intent(this,HistoryActivity.class);
+            }
+            else if(item.getItemId()==R.id.nav_profile){
                 return true;
             }
-
-            if (item.getItemId() == R.id.nav_history) {
-                startActivity(new Intent(this, HistoryActivity.class));
-                return true;
+            if(intent!=null){
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK
+                );
+                startActivity(intent);
+                finish();
             }
-
-            if (item.getItemId() == R.id.nav_analyze) {
-                startActivity(new Intent(this, AnalyzeActivity.class));
-                return true;
-            }
-
-            if (item.getItemId() == R.id.nav_profile) {
-                return true;
-            }
-
-            return false;
+            return true;
         });
 
         spinnerCurrency = findViewById(R.id.spinnerCurrency);

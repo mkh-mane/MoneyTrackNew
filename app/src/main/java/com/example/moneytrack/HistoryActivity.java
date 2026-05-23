@@ -65,24 +65,26 @@ public class HistoryActivity extends AppCompatActivity {
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
         bottomNav.setSelectedItemId(R.id.nav_history);
         bottomNav.setOnItemSelectedListener(item -> {
-            if (item.getItemId() == R.id.nav_home) {
-                startActivity(new Intent(this, MainActivity.class));
+            Intent intent = null;
+            if(item.getItemId()==R.id.nav_home){
+                intent = new Intent(this,MainActivity.class);
+            }
+            else if(item.getItemId()==R.id.nav_analyze){
+                intent = new Intent(this,AnalyzeActivity.class);
+            }
+            else if(item.getItemId()==R.id.nav_profile){
+                intent = new Intent(this,ProfileActivity.class);
+            }
+            else if(item.getItemId()==R.id.nav_history){
                 return true;
             }
-            if (item.getItemId() == R.id.nav_history) {
-                return true;
+            if(intent!=null){
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK
+                );
+                startActivity(intent);
+                finish();
             }
-            if (item.getItemId() == R.id.nav_analyze) {
-                startActivity(new Intent(this, AnalyzeActivity.class));
-                return true;
-            }
-
-            if (item.getItemId() == R.id.nav_profile) {
-                startActivity(new Intent(this, ProfileActivity.class));
-                return true;
-            }
-
-            return false;
+            return true;
         });
     }
     @Override
