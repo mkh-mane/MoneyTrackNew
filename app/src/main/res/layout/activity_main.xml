@@ -21,7 +21,10 @@
                 android:id="@+id/cardBalance"
                 android:layout_width="match_parent"
                 android:layout_height="170dp"
-                android:layout_margin="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginTop="35dp"
+                android:layout_marginBottom="16dp"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="6dp">
 
@@ -31,28 +34,21 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
-                    <!--                    <TextView-->
-                    <!--                        android:layout_width="wrap_content"-->
-                    <!--                        android:layout_height="wrap_content"-->
-                    <!--                        android:text="Balance Overview"-->
-                    <!--                        android:textSize="18sp"-->
-                    <!--                        android:textStyle="bold" />-->
-
-                    <!--                    <TextView-->
-                    <!--                        android:id="@+id/tvBalance"-->
-                    <!--                        android:layout_width="wrap_content"-->
-                    <!--                        android:layout_height="wrap_content"-->
-                    <!--                        android:layout_marginTop="10dp"-->
-                    <!--                        android:text="$0"-->
-                    <!--                        android:textSize="30sp"-->
-                    <!--                        android:textStyle="bold" />-->
-
+                    <TextView
+                        android:id="@+id/tvSwipeHint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="← Swipe to view accounts →"
+                        android:textSize="12sp"
+                        android:alpha="0.7"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginBottom="8dp"/>
 
                     <androidx.viewpager2.widget.ViewPager2
                         android:id="@+id/balancePager"
                         android:layout_width="match_parent"
-                        android:layout_height="110dp"
-                        android:layout_margin="16dp" />
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
 
                 </LinearLayout>
 
@@ -132,14 +128,14 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnHistory"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:layout_margin="16dp"
-                android:text="View History"
-                app:cornerRadius="12dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+<!--            <com.google.android.material.button.MaterialButton-->
+<!--                android:id="@+id/btnHistory"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="60dp"-->
+<!--                android:layout_margin="16dp"-->
+<!--                android:text="View History"-->
+<!--                app:cornerRadius="12dp"-->
+<!--                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />-->
 
         </LinearLayout>
 

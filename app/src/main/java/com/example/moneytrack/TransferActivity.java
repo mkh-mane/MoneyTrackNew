@@ -1,15 +1,19 @@
 package com.example.moneytrack;
 
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -46,191 +50,165 @@ public class TransferActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_transfer);
 
-        spinnerFrom = findViewById(R.id.spinnerFrom);
-        spinnerTo = findViewById(R.id.spinnerTo);
-
-        etFromAmount = findViewById(R.id.etFromAmount);
-        etToAmount = findViewById(R.id.etToAmount);
-
-        btnTransferDone = findViewById(R.id.btnTransferDone);
-
-        tvFromCurrency = findViewById(R.id.tvFromCurrency);
-        tvToCurrency = findViewById(R.id.tvToCurrency);
-
         database = AppDatabase.getInstance(this);
 
         accountDao = database.accountDao();
         transactionDao = database.transactionDao();
 
-        loadAccounts();
+        LinearLayout srcCashFrom = findViewById(R.id.srcCashFrom);
 
-        new Handler().postDelayed(() -> {
-            if(spinnerFrom.getSelectedItem() != null){
-                String account = spinnerFrom.getSelectedItem().toString();
-                tvFromCurrency.setText(getAccountCurrency(account));
-            }
+        LinearLayout srcCardFrom = findViewById(R.id.srcCardFrom);
 
-            if(spinnerTo.getSelectedItem() != null){
-                String account =
-                        spinnerTo.getSelectedItem().toString();
-                tvToCurrency.setText(getAccountCurrency(account));
-            }
-            updateConvertedAmount();
-        },300);
+        LinearLayout srcCashTo = findViewById(R.id.srcCashTo);
 
+        LinearLayout srcCardTo = findViewById(R.id.srcCardTo);
 
-        spinnerFrom.setOnItemSelectedListener(
-                new AdapterView.OnItemSelectedListener() {
+        LinearLayout containerFromAccounts = findViewById(R.id.containerFromAccounts);
 
-                    @Override
-                    public void onItemSelected(
-                            AdapterView<?> parent,
-                            View view,
-                            int position,
-                            long id
-                    ) {
-                        String account = spinnerFrom.getSelectedItem().toString();
-                        tvFromCurrency.setText(getAccountCurrency(account));
-                        updateConvertedAmount();
-                    }
+        LinearLayout containerToAccounts =
+                findViewById(R.id.containerToAccounts);
 
-                    @Override
-                    public void onNothingSelected(
-                            AdapterView<?> parent
-                    ) {}
-                });
+        etFromAmount =
+                findViewById(R.id.etFromAmount);
+
+        etToAmount =
+                findViewById(R.id.etToAmount);
+
+        btnTransferDone =
+                findViewById(R.id.btnTransferDone);
+
+        tvFromCurrency =
+                findViewById(R.id.tvFromCurrency);
+
+        tvToCurrency =
+                findViewById(R.id.tvToCurrency);
+
+        final String[] selectedFrom = {"Cash"};
+        final String[] selectedTo = {"Card"};
 
 
-        spinnerTo.setOnItemSelectedListener(
-                new AdapterView.OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(
-                            AdapterView<?> parent,
-                            View view,
-                            int position,
-                            long id
-                    ) {
+        View[] fromViews = {
+                srcCashFrom,
+                srcCardFrom
+        };
 
-                        String account = spinnerTo.getSelectedItem().toString();
-                        tvToCurrency.setText(getAccountCurrency(account));
-                        updateConvertedAmount();
-                    }
-                    @Override
-                    public void onNothingSelected(
-                            AdapterView<?> parent
-                    ) {}
-                });
+        View[] toViews = {
+                srcCashTo,
+                srcCardTo
+        };
+
+        tvFromCurrency.setText(
+                getAccountCurrency(
+                        selectedFrom[0]
+                )
+        );
+
+        tvToCurrency.setText(
+                getAccountCurrency(
+                        selectedTo[0]
+                )
+        );
 
 
+        srcCashFrom.setOnClickListener(v -> {
+            selectedFrom[0]="Cash";
+            clearAccountSelection(containerFromAccounts, fromViews);
+            ImageView img = (ImageView) srcCashFrom.getChildAt(0);
+            img.setBackgroundResource(R.drawable.selected_background);
+            tvFromCurrency.setText(getAccountCurrency("Cash"));
+            updateConvertedAmount(
+                    selectedFrom[0],
+                    selectedTo[0]
+            );
 
-        etFromAmount.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(
-                    CharSequence s,
-                    int start,
-                    int count,
-                    int after
-            ) {}
-
-            @Override
-            public void onTextChanged(
-                    CharSequence s,
-                    int start,
-                    int before,
-                    int count
-            ) {
-
-                if(isUpdating) return;
-                try{
-                    isUpdating = true;
-                    if(s.toString().trim().isEmpty()){
-                        etToAmount.setText("");
-                    }
-                    else{
-                        double amount = Double.parseDouble(s.toString());
-
-                        String fromCurrency =
-                                getAccountCurrency(
-                                        spinnerFrom.getSelectedItem().toString()
-                                );
-
-                        String toCurrency =
-                                getAccountCurrency(
-                                        spinnerTo.getSelectedItem().toString()
-                                );
-
-                        double converted =
-                                CurrencyUtils.convertBetweenAccounts(
-                                        amount,
-                                        fromCurrency,
-                                        toCurrency
-                                );
-
-                        etToAmount.setText(
-                                String.format(
-                                        "%.2f",
-                                        converted
-                                )
-                        );
-                    }
-
-                    isUpdating = false;
-                }catch(Exception e){
-                    isUpdating = false;
-                }
-            }
-
-            @Override
-            public void afterTextChanged(
-                    Editable s
-            ) {}
         });
 
 
-        etToAmount.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        srcCardFrom.setOnClickListener(v -> {
+            selectedFrom[0] = "Card";
+            clearAccountSelection(
+                    containerFromAccounts,
+                    fromViews
+            );
+            ImageView img = (ImageView) srcCardFrom.getChildAt(0);
+            img.setBackgroundResource(R.drawable.selected_background);
+            tvFromCurrency.setText(getAccountCurrency("Card"));
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if(isUpdating) return;
-                try{
-                    isUpdating = true;
-                    if(s.toString().trim().isEmpty()){
-                        etFromAmount.setText("");
-                    }
-                    else{
-                        double amount = Double.parseDouble(s.toString());
-                        String fromCurrency = getAccountCurrency(spinnerTo.getSelectedItem().toString());
-                        String toCurrency = getAccountCurrency(spinnerFrom.getSelectedItem().toString());
-                        double converted =
-                                CurrencyUtils.convertBetweenAccounts(
-                                        amount,
-                                        fromCurrency,
-                                        toCurrency
-                                );
+            updateConvertedAmount(
+                    selectedFrom[0],
+                    selectedTo[0]
+            );
 
-                        etFromAmount.setText(
-                                String.format(
-                                        "%.2f",
-                                        converted
-                                )
-                        );
-                    }
-
-                    isUpdating = false;
-
-                }catch(Exception e){
-                    isUpdating = false;
-                }
-            }
-
-            @Override
-            public void afterTextChanged(
-                    Editable s
-            ) {}
         });
 
+
+        srcCashTo.setOnClickListener(v -> {
+            selectedTo[0] = "Cash";
+            clearAccountSelection(containerToAccounts, toViews);
+            ImageView img = (ImageView) srcCashTo.getChildAt(0);
+            img.setBackgroundResource(R.drawable.selected_background);
+            tvToCurrency.setText(getAccountCurrency("Cash"));
+            updateConvertedAmount(selectedFrom[0], selectedTo[0]);
+        });
+
+
+        srcCardTo.setOnClickListener(v -> {
+
+            selectedTo[0] = "Card";
+
+            clearAccountSelection(containerToAccounts, toViews);
+            ImageView img = (ImageView) srcCardTo.getChildAt(0);
+            img.setBackgroundResource(R.drawable.selected_background);
+            tvToCurrency.setText(getAccountCurrency("Card"));
+            updateConvertedAmount(selectedFrom[0], selectedTo[0]);
+
+        });
+
+
+        // Load custom accounts
+
+        loadAccounts(
+                containerFromAccounts,
+                containerToAccounts,
+                selectedFrom,
+                selectedTo,
+                fromViews,
+                toViews
+        );
+
+
+        etFromAmount.addTextChangedListener(
+                new TextWatcher() {
+
+                    @Override
+                    public void beforeTextChanged(
+                            CharSequence s,
+                            int start,
+                            int count,
+                            int after
+                    ) {}
+
+                    @Override
+                    public void onTextChanged(
+                            CharSequence s,
+                            int start,
+                            int before,
+                            int count
+                    ) {
+
+                        updateConvertedAmount(
+                                selectedFrom[0],
+                                selectedTo[0]
+                        );
+
+                    }
+
+                    @Override
+                    public void afterTextChanged(
+                            Editable s
+                    ) {}
+                }
+        );
 
 
         btnTransferDone.setOnClickListener(v -> {
@@ -246,8 +224,8 @@ public class TransferActivity extends AppCompatActivity {
                 return;
             }
 
-            String fromAccount = spinnerFrom.getSelectedItem().toString();
-            String toAccount = spinnerTo.getSelectedItem().toString();
+            String fromAccount = selectedFrom[0];
+            String toAccount = selectedTo[0];
 
             if(fromAccount.equals(toAccount)){
                 Toast.makeText(
@@ -258,14 +236,12 @@ public class TransferActivity extends AppCompatActivity {
                 return;
             }
 
-            double fromAmount = Double.parseDouble(value);
+            double amount = Double.parseDouble(value);
             String fromCurrency = getAccountCurrency(fromAccount);
             String toCurrency = getAccountCurrency(toAccount);
 
-
-            double convertedAmount =
-                    CurrencyUtils.convertBetweenAccounts(
-                            fromAmount,
+            double converted = CurrencyUtils.convertBetweenAccounts(
+                            amount,
                             fromCurrency,
                             toCurrency
                     );
@@ -275,37 +251,37 @@ public class TransferActivity extends AppCompatActivity {
                             .getCurrentUser()
                             .getUid();
 
-            TransactionEntity expense = new TransactionEntity(
-                    fromAmount,
-                    "Transfer Out",
-                    "EXPENSE",
-                    System.currentTimeMillis(),
-                    "",
-                    userId,
-                    fromAccount,
-                    "⬆",
-                    fromAccount,
-                    fromCurrency
-            );
+            TransactionEntity expense =
+                    new TransactionEntity(
+                            amount,
+                            "Transfer Out",
+                            "EXPENSE",
+                            System.currentTimeMillis(),
+                            "",
+                            userId,
+                            fromAccount,
+                            "⬆",
+                            fromAccount,
+                            fromCurrency
+                    );
 
             expense.currency = fromCurrency;
 
-
-            TransactionEntity income = new TransactionEntity(
-                    convertedAmount,
-                    "Transfer In",
-                    "INCOME",
-                    System.currentTimeMillis(),
-                    "",
-                    userId,
-                    toAccount,
-                    "⬇",
-                    toAccount,
-                    toCurrency
-            );
+            TransactionEntity income =
+                    new TransactionEntity(
+                            converted,
+                            "Transfer In",
+                            "INCOME",
+                            System.currentTimeMillis(),
+                            "",
+                            userId,
+                            toAccount,
+                            "⬇",
+                            toAccount,
+                            toCurrency
+                    );
 
             income.currency = toCurrency;
-
 
             new Thread(() -> {
                 transactionDao.insert(expense);
@@ -323,61 +299,256 @@ public class TransferActivity extends AppCompatActivity {
 
         });
 
-        }
+    }
 
 
 
-    private void loadAccounts(){
+    private void loadAccounts(
+            LinearLayout containerFromAccounts,
+            LinearLayout containerToAccounts,
+            String[] selectedFrom,
+            String[] selectedTo,
+            View[] fromViews,
+            View[] toViews
+    ){
+
         new Thread(() -> {
-            accountNames.clear();
-            currencyMap.clear();
 
-            accountNames.add("Cash");
-            accountNames.add("Card");
-            currencyMap.put("Cash", "AMD ֏");
-            currencyMap.put("Card", "AMD ֏");
-
-            List<AccountEntity> accounts = accountDao.getAllAccounts();
-            for(AccountEntity account : accounts){
-                accountNames.add(account.name);
-                currencyMap.put(
-                        account.name,
-                        account.currency
-                );
-            }
+            List<AccountEntity> accounts =
+                    accountDao.getAllAccounts();
 
             runOnUiThread(() -> {
-                ArrayAdapter<String> adapter =
-                        new ArrayAdapter<>(
-                                this,
-                                android.R.layout.simple_spinner_item,
-                                accountNames
+
+                containerFromAccounts.removeAllViews();
+                containerToAccounts.removeAllViews();
+
+                currencyMap.clear();
+
+
+                for(AccountEntity account : accounts){
+
+                    // currency պահում ենք
+                    currencyMap.put(
+                            account.name,
+                            account.currency
+                    );
+
+                    // FROM
+                    LinearLayout fromItem =
+                            createAccountItem(
+                                    account.name
+                            );
+
+                    fromItem.setOnClickListener(v -> {
+
+                        selectedFrom[0] =
+                                account.name;
+
+                        clearAccountSelection(
+                                containerFromAccounts,
+                                fromViews
                         );
 
-                adapter.setDropDownViewResource(
-                        android.R.layout.simple_spinner_dropdown_item
-                );
+                        ImageView img =
+                                (ImageView)
+                                        fromItem.getChildAt(0);
 
-                spinnerFrom.setAdapter(adapter);
-                spinnerTo.setAdapter(adapter);
+                        img.setBackgroundResource(
+                                R.drawable.selected_background
+                        );
 
-                if(accountNames.size() > 0){
+                        tvFromCurrency.setText(
+                                account.currency
+                        );
 
-                    tvFromCurrency.setText(
-                            getAccountCurrency(
-                                    accountNames.get(0)
-                            )
+                        updateConvertedAmount(
+                                selectedFrom[0],
+                                selectedTo[0]
+                        );
+
+                    });
+
+
+                    // TO
+                    LinearLayout toItem =
+                            createAccountItem(
+                                    account.name
+                            );
+
+                    toItem.setOnClickListener(v -> {
+
+                        selectedTo[0] =
+                                account.name;
+
+                        clearAccountSelection(
+                                containerToAccounts,
+                                toViews
+                        );
+
+                        ImageView img =
+                                (ImageView)
+                                        toItem.getChildAt(0);
+
+                        img.setBackgroundResource(
+                                R.drawable.selected_background
+                        );
+
+                        tvToCurrency.setText(
+                                account.currency
+                        );
+
+                        updateConvertedAmount(
+                                selectedFrom[0],
+                                selectedTo[0]
+                        );
+
+                    });
+
+                    containerFromAccounts.addView(
+                            fromItem
                     );
 
-                    tvToCurrency.setText(
-                            getAccountCurrency(
-                                    accountNames.get(0)
-                            )
+                    containerToAccounts.addView(
+                            toItem
                     );
+
                 }
 
             });
+
         }).start();
+    }
+
+    private void highlightSelected(View selected, View[] all) {
+        for (View v : all) {
+            v.setBackgroundResource(android.R.color.transparent);
+        }
+        selected.setBackgroundResource(R.drawable.selected_background);
+    }
+
+
+    private LinearLayout createAccountItem(
+            String accountName
+    ){
+
+        LinearLayout item =
+                new LinearLayout(this);
+
+        item.setOrientation(
+                LinearLayout.VERTICAL
+        );
+
+        item.setGravity(
+                Gravity.CENTER
+        );
+
+        item.setPadding(
+                4,4,4,4
+        );
+
+        LinearLayout.LayoutParams itemParams =
+                new LinearLayout.LayoutParams(
+                        220,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+
+        item.setLayoutParams(
+                itemParams
+        );
+
+
+        ImageView image =
+                new ImageView(this);
+
+        image.setImageResource(
+                R.drawable.ic_wallet
+        );
+
+        image.setBackgroundResource(
+                R.drawable.bg_circle
+        );
+
+        image.setPadding(
+                10,
+                10,
+                10,
+                10
+        );
+
+        LinearLayout.LayoutParams imageParams =
+                new LinearLayout.LayoutParams(
+                        130,
+                        130
+                );
+
+        image.setLayoutParams(imageParams);
+
+
+        TextView text =
+                new TextView(this);
+
+        text.setText(accountName);
+
+        text.setTextSize(12);
+
+        text.setTextColor(
+                Color.parseColor("#4A4A4A")
+        );
+
+        text.setGravity(
+                Gravity.CENTER
+        );
+
+        text.setPadding(
+                0,
+                6,
+                0,
+                0
+        );
+
+
+        item.addView(image);
+        item.addView(text);
+
+        return item;
+    }
+
+
+
+    private void clearAccountSelection(
+            LinearLayout container,
+            View[] staticViews
+    ){
+
+        // custom account-ներ
+        int count = container.getChildCount();
+
+        for(int i=0;i<count;i++){
+
+            LinearLayout item =
+                    (LinearLayout)
+                            container.getChildAt(i);
+
+            ImageView image =
+                    (ImageView)
+                            item.getChildAt(0);
+
+            image.setBackgroundResource(
+                    R.drawable.bg_circle
+            );
+        }
+
+        // Cash/Card
+        for(View v : staticViews){
+            ImageView img =
+                    (ImageView)
+                            ((LinearLayout)v)
+                                    .getChildAt(0);
+
+            img.setBackgroundResource(
+                    R.drawable.bg_circle
+            );
+        }
     }
 
     private String getAccountCurrency(String accountName){
@@ -401,11 +572,8 @@ public class TransferActivity extends AppCompatActivity {
 
 
 
-    private void updateConvertedAmount(){
-        String value =
-                etFromAmount.getText()
-                        .toString()
-                        .trim();
+    private void updateConvertedAmount(String fromAccount, String toAccount){
+        String value = etFromAmount.getText().toString().trim();
 
         if(value.isEmpty()){
             etToAmount.setText("");
@@ -413,13 +581,10 @@ public class TransferActivity extends AppCompatActivity {
         }
 
         try{
-
             double amount = Double.parseDouble(value);
 
-            String fromCurrency =
-                    currencyMap.get(spinnerFrom.getSelectedItem().toString());
-
-            String toCurrency = currencyMap.get(spinnerTo.getSelectedItem().toString());
+            String fromCurrency = getAccountCurrency(fromAccount);
+            String toCurrency = getAccountCurrency(toAccount);
 
             double converted = CurrencyUtils.convertBetweenAccounts(
                             amount,
@@ -435,7 +600,5 @@ public class TransferActivity extends AppCompatActivity {
             etToAmount.setText("");
 
         }
-
     }
-
 }

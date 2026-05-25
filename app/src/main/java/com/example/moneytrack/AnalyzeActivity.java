@@ -9,6 +9,7 @@ import android.text.InputType;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -46,17 +47,28 @@ public class AnalyzeActivity extends AppCompatActivity {
 
         barChart = findViewById(R.id.barChart);
 
-        Button btnToday = findViewById(R.id.btnToday);
-        Button btnWeek = findViewById(R.id.btnWeek);
-        Button btnMonth = findViewById(R.id.btnMonth);
+        TextView btnToday = findViewById(R.id.btnToday);
+        TextView btnWeek = findViewById(R.id.btnWeek);
+        TextView btnMonth = findViewById(R.id.btnMonth);
 
         AppDatabase db = AppDatabase.getInstance(this);
         transactionDao = db.transactionDao();
         goalDao = db.goalDao();
 
-        btnToday.setOnClickListener(v -> loadData(1));
-        btnWeek.setOnClickListener(v -> loadData(7));
-        btnMonth.setOnClickListener(v -> loadData(30));
+        btnToday.setOnClickListener(v -> {
+            selectPeriod(btnToday, btnToday, btnWeek, btnMonth);
+            loadData(1);
+        });
+
+        btnWeek.setOnClickListener(v -> {
+            selectPeriod(btnWeek, btnToday, btnWeek, btnMonth);
+            loadData(7);
+        });
+
+        btnMonth.setOnClickListener(v -> {
+            selectPeriod(btnMonth, btnToday, btnWeek, btnMonth);
+            loadData(30);
+        });
 
         loadData(30);
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
@@ -186,6 +198,17 @@ public class AnalyzeActivity extends AppCompatActivity {
         });
 
         loadGoals();
+    }
+
+
+
+    private void selectPeriod(TextView selected, TextView... buttons){
+        for(TextView btn : buttons){
+            btn.setBackgroundResource(R.drawable.bg_chip_unselected);
+            btn.setTextColor(getColor(android.R.color.black));
+        }
+        selected.setBackgroundResource(R.drawable.bg_chip_selected);
+        selected.setTextColor(getColor(android.R.color.white));
     }
 
     @Override

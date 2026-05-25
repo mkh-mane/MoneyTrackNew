@@ -1,108 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="20dp">
 
     <TextView
+        android:id="@+id/tvTitleExpense"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="Add Expense"
+        android:textColor="#1A1A1A"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
-
+        android:layout_marginBottom="16dp"/>
 
     <TextView
-        android:text="From"
-        android:textStyle="bold"
-        android:layout_marginTop="12dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_width="wrap_content"/>
+        android:text="From"
+        android:textColor="#666666"
+        android:textStyle="bold"
+        android:textSize="14sp"/>
 
-    <LinearLayout
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_marginTop="8dp"
+        android:fillViewport="true"
+        android:scrollbars="none">
 
-        <!-- Cash + Card -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:weightSum="2"> <LinearLayout
+            android:id="@+id/srcCash"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp">
 
-            <LinearLayout
-                android:id="@+id/srcCash"
-                android:layout_width="0dp"
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_cash"
+                android:background="@drawable/bg_circle"
+                android:padding="10dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_margin="8dp"
-                android:orientation="vertical"
-                android:gravity="center">
-
-                <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:src="@drawable/ic_cash"
-                    android:background="@drawable/bg_circle"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Cash"/>
-            </LinearLayout>
-
+                android:layout_marginTop="6dp"
+                android:text="Cash"
+                android:textColor="#4A4A4A"
+                android:textSize="12sp"/>
+        </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/srcCard"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_margin="8dp"
                 android:orientation="vertical"
-                android:gravity="center">
+                android:gravity="center"
+                android:padding="4dp">
 
                 <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:src="@drawable/ic_card"
-                    android:background="@drawable/bg_circle"/>
+                    android:background="@drawable/bg_circle"
+                    android:padding="10dp"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Card"/>
+                    android:layout_marginTop="6dp"
+                    android:text="Card"
+                    android:textColor="#4A4A4A"
+                    android:textSize="12sp"/>
             </LinearLayout>
-
-        </LinearLayout>
-
-        <!-- Custom Accounts -->
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:scrollbars="none">
 
             <LinearLayout
                 android:id="@+id/accountContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"/>
-        </HorizontalScrollView>
 
-    </LinearLayout>
-
-
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Category"
+        android:textColor="#666666"
         android:textStyle="bold"
-        android:layout_marginTop="10dp"/>
+        android:layout_marginTop="20dp"
+        android:textSize="14sp"/>
 
     <HorizontalScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:scrollbars="none">
 
         <LinearLayout
             android:id="@+id/categoryContainer"
@@ -110,111 +116,135 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <!-- Food -->
             <LinearLayout
                 android:id="@+id/catFood"
-                android:layout_width="80dp"
+                android:layout_width="75dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="8dp">
+                android:padding="4dp">
 
                 <ImageView
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:src="@drawable/ic_food"
-                    android:background="@drawable/bg_circle"/>
+                    android:background="@drawable/bg_circle"
+                    android:padding="10dp"/>
 
                 <TextView
                     android:text="Food"
+                    android:textColor="#4A4A4A"
                     android:textSize="12sp"
-                    android:layout_height="wrap_content"
-                    android:layout_width="wrap_content"/>
+                    android:layout_marginTop="6dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
             </LinearLayout>
 
-            <!-- Transport -->
             <LinearLayout
                 android:id="@+id/catTransport"
-                android:layout_width="80dp"
+                android:layout_width="75dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="8dp">
+                android:padding="4dp">
 
                 <ImageView
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:src="@drawable/ic_transport"
-                    android:background="@drawable/bg_circle"/>
+                    android:background="@drawable/bg_circle"
+                    android:padding="10dp"/>
 
                 <TextView
                     android:text="Transport"
+                    android:textColor="#4A4A4A"
                     android:textSize="12sp"
-                    android:layout_height="wrap_content"
-                    android:layout_width="match_parent"/>
+                    android:layout_marginTop="6dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
             </LinearLayout>
 
-            <!-- Shopping -->
             <LinearLayout
                 android:id="@+id/catShopping"
-                android:layout_width="80dp"
+                android:layout_width="75dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="8dp">
+                android:padding="4dp">
 
                 <ImageView
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:src="@drawable/ic_shopping"
-                    android:background="@drawable/bg_circle"/>
+                    android:background="@drawable/bg_circle"
+                    android:padding="10dp"/>
 
                 <TextView
                     android:text="Shopping"
+                    android:textColor="#4A4A4A"
                     android:textSize="12sp"
-                    android:layout_height="wrap_content"
-                    android:layout_width="match_parent"/>
+                    android:layout_marginTop="6dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/catAdd"
-                android:layout_width="80dp"
+                android:layout_width="75dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="8dp">
+                android:padding="4dp">
 
                 <ImageView
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="12dp"
                     android:src="@android:drawable/ic_input_add"
-                    android:background="@drawable/bg_circle"/>
+                    android:background="@drawable/bg_circle"
+                    android:scaleType="centerInside"/>
 
                 <TextView
                     android:text="Add"
+                    android:textColor="#4A4A4A"
                     android:textSize="12sp"
-                    android:layout_height="wrap_content"
-                    android:layout_width="wrap_content"/>
+                    android:layout_marginTop="6dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
             </LinearLayout>
-
         </LinearLayout>
     </HorizontalScrollView>
 
-    <!-- Amount -->
+    <TextView
+        android:text="Amount"
+        android:textColor="#666666"
+        android:textStyle="bold"
+        android:layout_marginTop="24dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"/>
+
     <EditText
         android:id="@+id/etAmountExpense"
-        android:hint="Enter amount"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_amount"
+        android:gravity="center"
+        android:hint="0.00"
         android:inputType="numberDecimal"
-        android:layout_marginTop="16dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:textColor="#1A1A1A"
+        android:textSize="26sp"
+        android:textStyle="bold"/>
 
-    <!-- Save -->
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveExpense"
-        android:text="Save"
-        android:layout_marginTop="20dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
+        android:layout_height="54dp"
+        android:layout_marginTop="28dp"
+        android:text="Save"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:cornerRadius="14dp"
+        app:backgroundTint="@color/black"/>
 </LinearLayout>

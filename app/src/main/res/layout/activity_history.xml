@@ -1,71 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="#FAFAFA">
+    <TextView
+    android:id="@+id/tvHistoryTitle"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Transactions"
+    android:textColor="#1A1A1A"
+    android:textSize="22sp"
+    android:textStyle="bold"
+    android:layout_marginStart="20dp"
+    android:layout_marginTop="24dp"
+    android:layout_marginBottom="8dp"/>
 
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:scrollbars="none"
-        android:layout_marginTop="20dp">
+        android:overScrollMode="never">
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="8dp"
-            android:gravity="center">
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp"
+            android:gravity="center_vertical">
 
-            <Button
+            <TextView
                 android:id="@+id/btnAll"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:text="All"
-                android:textSize="12sp"
-                android:minWidth="70dp"/>
+                android:layout_height="36dp"
+                android:background="@drawable/bg_chip_selected" android:text="All"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:clickable="true"
+                android:focusable="true"/>
 
-            <Button
+            <TextView
                 android:id="@+id/btnIncomeFilter"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_chip_unselected"
                 android:text="Income"
-                android:textSize="12sp"
-                android:minWidth="90dp"
-                android:layout_marginStart="8dp"/>
+                android:textColor="#666666"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:clickable="true"
+                android:focusable="true"/>
 
-            <Button
+            <TextView
                 android:id="@+id/btnExpenseFilter"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_chip_unselected"
                 android:text="Expense"
-                android:textSize="12sp"
-                android:minWidth="90dp"
-                android:layout_marginStart="8dp"/>
+                android:textColor="#666666"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:clickable="true"
+                android:focusable="true"/>
 
-            <Button
+            <TextView
                 android:id="@+id/btnMonth"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_chip_unselected"
                 android:text="This Month"
-                android:textSize="12sp"
-                android:minWidth="110dp"
-                android:layout_marginStart="8dp"/>
+                android:textColor="#666666"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:clickable="true"
+                android:focusable="true"/>
 
         </LinearLayout>
-
     </HorizontalScrollView>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewHistory"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical"/>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:menu="@menu/bottom_menu"/>
+        android:background="#FFFFFF"
+        app:elevation="8dp"
+        app:itemIconTint="@color/black" app:itemTextColor="@color/black"
+        app:menu="@menu/bottom_menu" />
 
 </LinearLayout>

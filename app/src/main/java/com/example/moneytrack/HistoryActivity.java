@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.app.AlertDialog;
 import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -33,10 +34,10 @@ public class HistoryActivity extends AppCompatActivity {
 
         transactionDao = AppDatabase.getInstance(this).transactionDao();
 
-        Button btnAll = findViewById(R.id.btnAll);
-        Button btnIncomeFilter = findViewById(R.id.btnIncomeFilter);
-        Button btnExpenseFilter = findViewById(R.id.btnExpenseFilter);
-        Button btnMonth = findViewById(R.id.btnMonth);
+        TextView btnAll = findViewById(R.id.btnAll);
+        TextView btnIncomeFilter = findViewById(R.id.btnIncomeFilter);
+        TextView btnExpenseFilter = findViewById(R.id.btnExpenseFilter);
+        TextView btnMonth = findViewById(R.id.btnMonth);
 
         // Adapter with click listener
         adapter = new TransactionAdapter(new ArrayList<>(), transaction -> {
@@ -56,10 +57,52 @@ public class HistoryActivity extends AppCompatActivity {
 
         recyclerView.setAdapter(adapter);
         loadData();
-        btnAll.setOnClickListener(v -> loadData());
-        btnIncomeFilter.setOnClickListener(v -> loadFilteredData("INCOME"));
-        btnExpenseFilter.setOnClickListener(v -> loadFilteredData("EXPENSE"));
-        btnMonth.setOnClickListener(v -> loadThisMonthData());
+        btnAll.setOnClickListener(v -> {
+            selectFilter(
+                    btnAll,
+                    btnAll,
+                    btnIncomeFilter,
+                    btnExpenseFilter,
+                    btnMonth
+            );
+            loadData();
+        });
+
+
+        btnIncomeFilter.setOnClickListener(v -> {
+            selectFilter(
+                    btnIncomeFilter,
+                    btnAll,
+                    btnIncomeFilter,
+                    btnExpenseFilter,
+                    btnMonth
+            );
+            loadFilteredData("INCOME");
+        });
+
+
+        btnExpenseFilter.setOnClickListener(v -> {
+            selectFilter(
+                    btnExpenseFilter,
+                    btnAll,
+                    btnIncomeFilter,
+                    btnExpenseFilter,
+                    btnMonth
+            );
+            loadFilteredData("EXPENSE");
+        });
+
+
+        btnMonth.setOnClickListener(v -> {
+            selectFilter(
+                    btnMonth,
+                    btnAll,
+                    btnIncomeFilter,
+                    btnExpenseFilter,
+                    btnMonth
+            );
+            loadThisMonthData();
+        });
 
 
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
@@ -87,6 +130,16 @@ public class HistoryActivity extends AppCompatActivity {
             return true;
         });
     }
+
+    private void selectFilter(TextView selected, TextView... filters){
+        for(TextView filter : filters){
+            filter.setBackgroundResource(R.drawable.bg_chip_unselected);
+            filter.setTextColor(getColor(android.R.color.black));
+        }
+        selected.setBackgroundResource(R.drawable.bg_chip_selected);
+        selected.setTextColor(getColor(android.R.color.white));
+    }
+
     @Override
     protected void onResume() {
         super.onResume();

@@ -5,14 +5,18 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
 import android.view.Gravity;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.*;
 
 import android.widget.ArrayAdapter;
@@ -103,11 +107,10 @@ public class MainActivity extends AppCompatActivity {
         firestore = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
 
-//        tvBalance = findViewById(R.id.tvBalance);
         balancePager = findViewById(R.id.balancePager);
         btnIncome = findViewById(R.id.btnIncome);
         btnExpense = findViewById(R.id.btnExpense);
-        btnHistory = findViewById(R.id.btnHistory);
+//        btnHistory = findViewById(R.id.btnHistory);
         btnVoice = findViewById(R.id.btnVoice);
         btnScan = findViewById(R.id.btnScan);
         btnTransfer = findViewById(R.id.btnTransfer);
@@ -118,6 +121,17 @@ public class MainActivity extends AppCompatActivity {
 
         calculateAndUpdateBalance();
 
+        TextView hint = findViewById(R.id.tvSwipeHint);
+        Animation animation = AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left);
+        hint.startAnimation(animation);
+        new Handler().postDelayed(() -> {
+            hint.animate()
+                    .alpha(0f)
+                    .setDuration(700);
+        },5000);
+
+
+
         btnIncome.setOnClickListener(v -> showIncomeDialog());
         btnExpense.setOnClickListener(v -> showExpenseDialog());
 
@@ -126,11 +140,11 @@ public class MainActivity extends AppCompatActivity {
             );
         });
 
-        if (btnHistory != null) {
-            btnHistory.setOnClickListener(v ->
-                    startActivity(new Intent(MainActivity.this, HistoryActivity.class))
-            );
-        }
+//        if (btnHistory != null) {
+//            btnHistory.setOnClickListener(v ->
+//                    startActivity(new Intent(MainActivity.this, HistoryActivity.class))
+//            );
+//        }
 
         if (btnVoice != null) btnVoice.setOnClickListener(v -> startVoiceInput());
 
@@ -270,7 +284,6 @@ public class MainActivity extends AppCompatActivity {
 
 
         // LOAD ACCOUNTS
-
         new Thread(() -> {
             List<AccountEntity> accounts = accountDao.getAllAccounts();
 
@@ -279,29 +292,66 @@ public class MainActivity extends AppCompatActivity {
                     LinearLayout item = new LinearLayout(this);
                     item.setOrientation(LinearLayout.VERTICAL);
                     item.setGravity(Gravity.CENTER);
-                    item.setPadding(20, 20, 20, 20);
+
+                    LinearLayout.LayoutParams itemParams =
+                            new LinearLayout.LayoutParams(
+                                    dpToPx(75),
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                            );
+
+                    item.setLayoutParams(itemParams);
+                    item.setPadding(4,4,4,4);
 
                     ImageView image = new ImageView(this);
                     image.setImageResource(R.drawable.ic_wallet);
                     image.setBackgroundResource(R.drawable.bg_circle);
 
-                    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(100, 100);
-                    image.setLayoutParams(params);
+                    LinearLayout.LayoutParams imageParams =
+                            new LinearLayout.LayoutParams(
+                                    dpToPx(48),
+                                    dpToPx(48)
+                            );
+
+                    image.setLayoutParams(imageParams);
+
+                    image.setPadding(
+                            dpToPx(10),
+                            dpToPx(10),
+                            dpToPx(10),
+                            dpToPx(10)
+                    );
+
 
                     TextView text = new TextView(this);
                     text.setText(account.name);
+                    text.setTextSize(12);
+                    text.setTextColor(Color.parseColor("#4A4A4A"));
+                    text.setGravity(Gravity.CENTER);
+                    text.setLayoutParams(
+                            new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                            )
+                    );
+
+                    text.setPadding(
+                            0,
+                            dpToPx(6),
+                            0,
+                            0
+                    );
+
                     item.addView(image);
                     item.addView(text);
-
 
                     item.setOnClickListener(v -> {
                         selectedAccount[0] = account.name;
                         selectedSource[0] = account.name;
                         clearAccountSelection(accountContainer);
-                        item.setBackgroundResource(R.drawable.selected_background);
                         for(View source : allSources){
                             source.setBackground(null);
                         }
+                        item.setBackgroundResource(R.drawable.selected_background);
                     });
                     accountContainer.addView(item);
                 }
@@ -313,13 +363,13 @@ public class MainActivity extends AppCompatActivity {
         // CATEGORIES
 
         LinearLayout catSalary = view.findViewById(R.id.catSalary);
-        LinearLayout catBusiness = view.findViewById(R.id.catBonus);
-        LinearLayout catGift = view.findViewById(R.id.catOther);
+        LinearLayout catBonus = view.findViewById(R.id.catBonus);
+        LinearLayout catFreelance = view.findViewById(R.id.catFreelance);
 
         LinearLayout catAdd = view.findViewById(R.id.catAdd);
 
         LinearLayout categoryContainer = view.findViewById(R.id.categoryContainer);
-        View[] staticCats = {catSalary, catBusiness, catGift};
+        View[] staticCats = {catSalary, catBonus, catFreelance};
         catSalary.setOnClickListener(v -> {
             selectedCategory[0] = "Salary";
             selectedIcon[0] = "💰";
@@ -327,16 +377,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        catBusiness.setOnClickListener(v -> {
-            selectedCategory[0] = "Business";
+        catBonus.setOnClickListener(v -> {
+            selectedCategory[0] = "Bonus";
             selectedIcon[0] = "📈";
-            highlightAllCategories(catBusiness, categoryContainer, staticCats);
+            highlightAllCategories(catBonus, categoryContainer, staticCats);
         });
 
-        catGift.setOnClickListener(v -> {
-            selectedCategory[0] = "Gift";
+        catFreelance.setOnClickListener(v -> {
+            selectedCategory[0] = "Freelance";
             selectedIcon[0] = "🎁";
-            highlightAllCategories(catGift, categoryContainer, staticCats);
+            highlightAllCategories(catFreelance, categoryContainer, staticCats);
         });
 
 
@@ -466,16 +516,54 @@ public class MainActivity extends AppCompatActivity {
                     LinearLayout item = new LinearLayout(this);
                     item.setOrientation(LinearLayout.VERTICAL);
                     item.setGravity(Gravity.CENTER);
-                    item.setPadding(20, 20, 20, 20);
+
+                    LinearLayout.LayoutParams itemParams =
+                            new LinearLayout.LayoutParams(
+                                    dpToPx(75),
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                            );
+
+                    item.setLayoutParams(itemParams);
+                    item.setPadding(4,4,4,4);
+
                     ImageView image = new ImageView(this);
                     image.setImageResource(R.drawable.ic_wallet);
                     image.setBackgroundResource(R.drawable.bg_circle);
 
-                    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(100, 100);
-                    image.setLayoutParams(params);
+                    LinearLayout.LayoutParams imageParams =
+                            new LinearLayout.LayoutParams(
+                                    dpToPx(48),
+                                    dpToPx(48)
+                            );
+
+                    image.setLayoutParams(imageParams);
+
+                    image.setPadding(
+                            dpToPx(10),
+                            dpToPx(10),
+                            dpToPx(10),
+                            dpToPx(10)
+                    );
+
 
                     TextView text = new TextView(this);
                     text.setText(account.name);
+                    text.setTextSize(12);
+                    text.setTextColor(Color.parseColor("#4A4A4A"));
+                    text.setGravity(Gravity.CENTER);
+                    text.setLayoutParams(
+                            new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                            )
+                    );
+
+                    text.setPadding(
+                            0,
+                            dpToPx(6),
+                            0,
+                            0
+                    );
 
                     item.addView(image);
                     item.addView(text);
@@ -484,21 +572,14 @@ public class MainActivity extends AppCompatActivity {
                         selectedAccount[0] = account.name;
                         selectedSource[0] = account.name;
                         clearAccountSelection(accountContainer);
-
-                        item.setBackgroundResource(R.drawable.selected_background);
-
-                        // Remove Cash/Card selection
                         for(View source : allSources){
-                            source.setBackground(
-                                    null
-                            );
+                            source.setBackground(null);
                         }
+                        item.setBackgroundResource(R.drawable.selected_background);
                     });
                     accountContainer.addView(item);
                 }
-
             });
-
         }).start();
 
 
@@ -612,6 +693,11 @@ public class MainActivity extends AppCompatActivity {
             child.setBackground(null);
         }
     }
+    private int dpToPx(int dp){
+        return (int)(
+                dp * getResources().getDisplayMetrics().density
+        );
+    }
 
 
     private void addCategoryView(String cat,
@@ -625,18 +711,48 @@ public class MainActivity extends AppCompatActivity {
         String emoji = parts[0];
         String name = parts.length > 1 ? parts[1] : cat;
 
+        int width = (int)(90 * getResources().getDisplayMetrics().density);
+        int size = (int)(50 * getResources().getDisplayMetrics().density);
         LinearLayout newCat = new LinearLayout(this);
+
+        newCat.setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        width,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+        );
+
         newCat.setOrientation(LinearLayout.VERTICAL);
         newCat.setGravity(Gravity.CENTER);
-        newCat.setPadding(16,16,16,16);
 
+        newCat.setPadding(8, 8, 8, 8);
+        // icon
         TextView icon = new TextView(this);
-        icon.setText(emoji);
-        icon.setTextSize(24);
 
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(size, size);
+        icon.setLayoutParams(iconParams);
+        icon.setGravity(Gravity.CENTER);
+
+        icon.setText(emoji);
+        icon.setTextSize(22);
+
+        icon.setBackgroundResource(R.drawable.bg_circle);
+
+        // text
         TextView text = new TextView(this);
         text.setText(name);
+        text.setTextSize(12);
+        text.setGravity(Gravity.CENTER);
 
+        LinearLayout.LayoutParams textParams =
+                new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+
+        textParams.topMargin = 14;
+        text.setLayoutParams(textParams);
+        // add views
         newCat.addView(icon);
         newCat.addView(text);
 
@@ -676,22 +792,15 @@ public class MainActivity extends AppCompatActivity {
         builder.setView(layout);
 
         builder.setPositiveButton("Add", (d, which) -> {
-
             String name = input.getText().toString().trim();
             String emoji = emojiInput.getText().toString().trim();
-
             if (!name.isEmpty()) {
-
                 if (emoji.isEmpty()) emoji = "📦";
-
                 String finalCat = emoji + "|" + name;
-
                 List<String> list = loadCategories(key);
                 list.add(0, finalCat);
                 saveCategories(list, key);
-
                 addCategoryView(finalCat, container, selectedCategory, selectedIcon, staticCats, catAdd);
-
                 Toast.makeText(this, "Added: " + name, Toast.LENGTH_SHORT).show();
             }
         });
@@ -716,17 +825,8 @@ public class MainActivity extends AppCompatActivity {
                     cardAMD += value;
             }
 
-            SharedPreferences prefs =
-                    getSharedPreferences(
-                            "settings",
-                            MODE_PRIVATE
-                    );
-
-            String currency =
-                    prefs.getString(
-                            "currency",
-                            "AMD ֏"
-                    );
+            SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+            String currency = prefs.getString("currency", "AMD ֏");
 
             String symbol="֏";
 
@@ -738,8 +838,7 @@ public class MainActivity extends AppCompatActivity {
                 symbol="₽";
 
 
-            List<BalanceItem> balanceItems =
-                    new ArrayList<>();
+            List<BalanceItem> balanceItems = new ArrayList<>();
 
 
             // Total
@@ -797,26 +896,17 @@ public class MainActivity extends AppCompatActivity {
                 double accountBalance = 0;
                 for(TransactionEntity t : list){
                     if(account.name.equals(t.accountName)){
-                        double value =
-                                t.type.equals("INCOME")
-                                        ? t.amount
-                                        : -t.amount;
-
+                        double value = t.type.equals("INCOME") ? t.amount : -t.amount;
                         accountBalance += value;
                     }
                 }
-
                 String accountSymbol="֏";
-
                 if(account.currency.contains("$"))
                     accountSymbol="$";
-
                 else if(account.currency.contains("€"))
                     accountSymbol="€";
-
                 else if(account.currency.contains("₽"))
                     accountSymbol="₽";
-
                 balanceItems.add(
                         new BalanceItem(
                                 account.name,
@@ -829,7 +919,6 @@ public class MainActivity extends AppCompatActivity {
                         )
                 );
             }
-
             balanceItems.add(
                     new BalanceItem(
                             "Add Account",
@@ -839,7 +928,6 @@ public class MainActivity extends AppCompatActivity {
             );
 
             runOnUiThread(() -> {
-
                 balancePager.setAdapter(
                         new BalancePagerAdapter(
                                 balanceItems,
@@ -868,28 +956,19 @@ public class MainActivity extends AppCompatActivity {
 
 
     void showAddAccountDialog() {
-
-        AlertDialog.Builder builder =
-                new AlertDialog.Builder(this);
-
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Create Account");
-
-        LinearLayout layout =
-                new LinearLayout(this);
-
+        LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
-
         layout.setPadding(
                 50,
                 30,
                 50,
                 10
         );
-
         EditText input = new EditText(this);
         input.setHint("Account Name");
         layout.addView(input);
-
         Spinner spinner = new Spinner(this);
         ArrayList<String> currencies = new ArrayList<>();
 
@@ -916,42 +995,28 @@ public class MainActivity extends AppCompatActivity {
                 "Create",
                 (dialog, which) -> {
 
-                    String name =
-                            input.getText()
-                                    .toString()
-                                    .trim();
-
+                    String name = input.getText().toString().trim();
                     if(name.isEmpty()){
-
                         Toast.makeText(
                                 this,
                                 "Enter name",
                                 Toast.LENGTH_SHORT
                         ).show();
-
                         return;
                     }
 
-                    String currency =
-                            spinner.getSelectedItem()
-                                    .toString();
+                    String currency = spinner.getSelectedItem().toString();
 
                     new Thread(() -> {
-
-                        AccountEntity account =
-                                new AccountEntity();
-
+                        AccountEntity account = new AccountEntity();
                         account.name = name;
                         account.currency = currency;
-
                         accountDao.insert(account);
-
                         runOnUiThread(
                                 this::calculateAndUpdateBalance
                         );
 
                     }).start();
-
                 });
 
         builder.setNegativeButton(
@@ -966,7 +1031,7 @@ public class MainActivity extends AppCompatActivity {
         for (View v : all) {
             v.setBackgroundResource(android.R.color.transparent);
         }
-        selected.setBackgroundResource(R.drawable.selected_circle);
+        selected.setBackgroundResource(R.drawable.selected_background);
     }
 
     private void highlightAllCategories(View selected,
@@ -983,7 +1048,7 @@ public class MainActivity extends AppCompatActivity {
                     .setBackgroundResource(android.R.color.transparent);
         }
         // highlight selected
-        selected.setBackgroundResource(R.drawable.selected_circle);
+        selected.setBackgroundResource(R.drawable.selected_background);
     }
 
     private void saveCategories(List<String> categories, String key) {
