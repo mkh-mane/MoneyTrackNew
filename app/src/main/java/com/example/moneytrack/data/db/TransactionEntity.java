@@ -19,8 +19,26 @@ public class TransactionEntity {
     public String icon;
     public String accountName;
     public String currency;
-
+    public double originalAmount;
     public TransactionEntity() {}
+
+
+    public TransactionEntity(double amount, String category, String type,
+                             long date, String note, String userId, String source,
+                             String icon, String accountName, String currency,double originalAmount ){
+
+        this.amount = amount;
+        this.category = category;
+        this.type = type;
+        this.date = date;
+        this.note = note;
+        this.userId = userId;
+        this.source = source;
+        this.icon = icon;
+        this.accountName = accountName;
+        this.currency = currency;
+        this.originalAmount = amount;
+    }
 
     public TransactionEntity(double amount, String category, String type,
                             long date, String note, String userId, String source,

@@ -62,42 +62,19 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         String symbol = "֏";
         double amount = transaction.amount;
 
-        SharedPreferences prefs =
-                holder.itemView.getContext()
-                        .getSharedPreferences(
-                                "settings",
-                                Context.MODE_PRIVATE
-                        );
-
-        String appCurrency = prefs.getString("currency", "AMD ֏");
-
-        // Transfer-ներ
-        if(transaction.category.equals("Transfer Out")
-                || transaction.category.equals("Transfer In")){
-            if(transaction.currency != null){
-                if(transaction.currency.contains("$"))
-                    symbol = "$";
-                else if(transaction.currency.contains("€"))
-                    symbol = "€";
-                else if(transaction.currency.contains("₽"))
-                    symbol = "₽";
-            }
-        }
-
-        // Սովորական Income / Expense
-        else{
-            amount = CurrencyUtils.convert(
-                            transaction.amount,
-                            appCurrency
-                    );
-            if(appCurrency.contains("$"))
+        if(transaction.currency != null){
+            if(transaction.currency.contains("$")){
                 symbol = "$";
-
-            else if(appCurrency.contains("€"))
+            }
+            else if(transaction.currency.contains("€")){
                 symbol = "€";
-
-            else if(appCurrency.contains("₽"))
+            }
+            else if(transaction.currency.contains("₽")){
                 symbol = "₽";
+            }
+            else{
+                symbol = "֏";
+            }
         }
 
         String prefix = transaction.type.equals("INCOME") ? "+ " : "- ";

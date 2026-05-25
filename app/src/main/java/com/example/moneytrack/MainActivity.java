@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -79,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
     private double rubRate = 89;
     private double amdPerUsd = 390;
     private ViewPager2 balancePager;
+    HashMap<String, String> currencyMap = new HashMap<>();
 
     ActivityResultLauncher<Intent> cameraLauncher =
             registerForActivityResult(
@@ -289,6 +291,11 @@ public class MainActivity extends AppCompatActivity {
 
             runOnUiThread(() -> {
                 for(AccountEntity account : accounts){
+                    currencyMap.put(
+                            account.name,
+                            account.currency
+                    );
+
                     LinearLayout item = new LinearLayout(this);
                     item.setOrientation(LinearLayout.VERTICAL);
                     item.setGravity(Gravity.CENTER);
@@ -419,13 +426,18 @@ public class MainActivity extends AppCompatActivity {
         btnSave.setOnClickListener(v -> {
             String value = etAmount.getText().toString().trim();
             if(!value.isEmpty()){
+
                 double enteredAmount = Double.parseDouble(value);
-                SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
-                String currency = prefs.getString("currency", "AMD ֏");
-                double amount = convertToAMD(enteredAmount, currency);
-                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                TransactionEntity transaction = new TransactionEntity(
-                                amount,
+
+                String currency = getAccountCurrency(selectedAccount[0]);
+                String userId =
+                        FirebaseAuth.getInstance()
+                                .getCurrentUser()
+                                .getUid();
+
+                TransactionEntity transaction =
+                        new TransactionEntity(
+                                enteredAmount,
                                 selectedCategory[0],
                                 "INCOME",
                                 System.currentTimeMillis(),
@@ -433,7 +445,16 @@ public class MainActivity extends AppCompatActivity {
                                 userId,
                                 selectedSource[0],
                                 selectedIcon[0],
-                                selectedAccount[0]
+                                selectedAccount[0],
+                                currency
+                        );
+
+                transaction.currency = currency;
+
+                transaction.originalAmount =
+                        convertToAMD(
+                                enteredAmount,
+                                currency
                         );
 
                 new Thread(() -> {
@@ -441,12 +462,8 @@ public class MainActivity extends AppCompatActivity {
 
                     FirebaseFirestore
                             .getInstance()
-                            .collection(
-                                    "transactions"
-                            )
-                            .add(
-                                    transaction
-                            );
+                            .collection("transactions")
+                            .add(transaction);
 
                     runOnUiThread(
                             this::calculateAndUpdateBalance
@@ -455,8 +472,8 @@ public class MainActivity extends AppCompatActivity {
                 }).start();
                 dialog.dismiss();
 
-            }
-            else{
+            }else{
+
                 Toast.makeText(
                         this,
                         "Enter amount",
@@ -513,6 +530,10 @@ public class MainActivity extends AppCompatActivity {
             List<AccountEntity> accounts = accountDao.getAllAccounts();
             runOnUiThread(() -> {
                 for(AccountEntity account : accounts){
+                    currencyMap.put(
+                            account.name,
+                            account.currency
+                    );
                     LinearLayout item = new LinearLayout(this);
                     item.setOrientation(LinearLayout.VERTICAL);
                     item.setGravity(Gravity.CENTER);
@@ -638,20 +659,27 @@ public class MainActivity extends AppCompatActivity {
 
         // SAVE
         btnSave.setOnClickListener(v -> {
+
             String value = etAmount.getText().toString().trim();
+
             if(!value.isEmpty()){
-                double enteredAmount = Double.parseDouble(value);
-                SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
-                String currency = prefs.getString("currency", "AMD ֏");
-                double amount = convertToAMD(enteredAmount, currency);
-                String userId = FirebaseAuth
-                                .getInstance()
+
+                double enteredAmount =
+                        Double.parseDouble(value);
+
+                String currency =
+                        getAccountCurrency(
+                                selectedAccount[0]
+                        );
+
+                String userId =
+                        FirebaseAuth.getInstance()
                                 .getCurrentUser()
                                 .getUid();
 
                 TransactionEntity transaction =
                         new TransactionEntity(
-                                amount,
+                                enteredAmount,
                                 selectedCategory[0],
                                 "EXPENSE",
                                 System.currentTimeMillis(),
@@ -659,26 +687,42 @@ public class MainActivity extends AppCompatActivity {
                                 userId,
                                 selectedSource[0],
                                 selectedIcon[0],
-                                selectedAccount[0]
+                                selectedAccount[0],
+                                currency
+                        );
+
+                transaction.currency = currency;
+
+                transaction.originalAmount =
+                        convertToAMD(
+                                enteredAmount,
+                                currency
                         );
 
                 new Thread(() -> {
+
                     transactionDao.insert(transaction);
 
-                    FirebaseFirestore.getInstance()
+                    FirebaseFirestore
+                            .getInstance()
                             .collection("transactions")
                             .add(transaction);
-                    runOnUiThread(this::calculateAndUpdateBalance);
+
+                    runOnUiThread(
+                            this::calculateAndUpdateBalance
+                    );
+
                 }).start();
+
                 dialog.dismiss();
-            } else {
+
+            }else{
 
                 Toast.makeText(
                         this,
                         "Enter amount",
                         Toast.LENGTH_SHORT
                 ).show();
-
             }
         });
         dialog.show();
@@ -815,21 +859,38 @@ public class MainActivity extends AppCompatActivity {
             double totalAMD = 0;
             double cashAMD = 0;
             double cardAMD = 0;
-            for(TransactionEntity t:list){
-                double amountAMD = convertToAMD(t.amount, getAccountCurrency(t.accountName));
-                double value = t.type.equals("INCOME") ? amountAMD : -amountAMD;
+            for(TransactionEntity t : list){
+                double value = 0;
+                double amountAMD =
+                        t.originalAmount > 0
+                                ? t.originalAmount
+                                : convertToAMD(
+                                t.amount,
+                                t.currency
+                        );
+
+                if(t.type.equals("INCOME")){
+                    value = amountAMD;
+                }
+
+                else if(
+                        t.type.equals("EXPENSE") || t.type.equals("EXPENCE")
+                ){
+                    value = -amountAMD;
+                }
                 totalAMD += value;
-                if("Cash".equals(t.accountName))
+                if("Cash".equals(t.accountName)){
                     cashAMD += value;
-                else if("Card".equals(t.accountName))
+                }
+                else if("Card".equals(t.accountName)){
                     cardAMD += value;
+                }
             }
 
             SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
             String currency = prefs.getString("currency", "AMD ֏");
 
-            String symbol="֏";
-
+            String symbol = "֏";
             if(currency.contains("$"))
                 symbol="$";
             else if(currency.contains("€"))
@@ -837,11 +898,9 @@ public class MainActivity extends AppCompatActivity {
             else if(currency.contains("₽"))
                 symbol="₽";
 
-
             List<BalanceItem> balanceItems = new ArrayList<>();
 
-
-            // Total
+            // TOTAL
             balanceItems.add(
                     new BalanceItem(
                             "Total Balance",
@@ -857,7 +916,7 @@ public class MainActivity extends AppCompatActivity {
                     )
             );
 
-            // Cash
+            // CASH
             balanceItems.add(
                     new BalanceItem(
                             "Cash Balance",
@@ -873,7 +932,7 @@ public class MainActivity extends AppCompatActivity {
                     )
             );
 
-            // Card
+            // CARD
             balanceItems.add(
                     new BalanceItem(
                             "Card Balance",
@@ -890,13 +949,19 @@ public class MainActivity extends AppCompatActivity {
             );
 
 
-            // Custom accounts
+            // CUSTOM ACCOUNTS
             List<AccountEntity> accounts = accountDao.getAllAccounts();
             for(AccountEntity account : accounts){
                 double accountBalance = 0;
                 for(TransactionEntity t : list){
-                    if(account.name.equals(t.accountName)){
-                        double value = t.type.equals("INCOME") ? t.amount : -t.amount;
+                    if(account.name.equals(t.accountName)) {
+                        double value = 0;
+                        if(t.type.equals("INCOME")){
+                            value = t.amount;
+                        }
+                        else if(t.type.equals("EXPENSE") || t.type.equals("EXPENCE")){
+                            value = -t.amount;
+                        }
                         accountBalance += value;
                     }
                 }
@@ -907,6 +972,8 @@ public class MainActivity extends AppCompatActivity {
                     accountSymbol="€";
                 else if(account.currency.contains("₽"))
                     accountSymbol="₽";
+
+
                 balanceItems.add(
                         new BalanceItem(
                                 account.name,
@@ -919,6 +986,7 @@ public class MainActivity extends AppCompatActivity {
                         )
                 );
             }
+
             balanceItems.add(
                     new BalanceItem(
                             "Add Account",
@@ -941,16 +1009,16 @@ public class MainActivity extends AppCompatActivity {
 
 
     private String getAccountCurrency(String accountName){
-        if(accountName.equals("Cash"))
-            return "AMD ֏";
-        if(accountName.equals("Card"))
-            return "AMD ֏";
-        List<AccountEntity> accounts = accountDao.getAllAccounts();
-        for(AccountEntity account : accounts){
-            if(account.name.equals(accountName))
-                return account.currency;
+        if(accountName.equals("Cash") || accountName.equals("Card")){
+            SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+            return prefs.getString("currency", "AMD ֏");
         }
-        return "AMD ֏";
+        // custom account-ների համար
+        String currency = currencyMap.get(accountName);
+        if(currency == null){
+            return "AMD ֏";
+        }
+        return currency;
     }
 
 
@@ -1163,6 +1231,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         String userId = user.getUid();
+        String currency = getAccountCurrency(source);
 
         TransactionEntity transaction =
                 new TransactionEntity(
@@ -1174,10 +1243,16 @@ public class MainActivity extends AppCompatActivity {
                         userId,
                         source,
                         "🎤",
-                        source
+                        source,
+                        currency
                 );
 
-        transaction.currency = source.equals("Cash") ? "AMD ֏" : "AMD ֏";
+        transaction.currency = currency;
+        transaction.originalAmount =
+                convertToAMD(
+                        amount,
+                        currency
+                );
 
         new Thread(() -> {
             transactionDao.insert(transaction);
@@ -1322,11 +1397,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void openCamera() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
         if (intent.resolveActivity(getPackageManager()) != null) {
             try {
                 File photoFile = createImageFile();
-
                 Uri photoURI = FileProvider.getUriForFile(
                         this,
                         "com.example.moneytrack.fileprovider",
@@ -1392,6 +1465,8 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     String userId = user.getUid();
+                    String currency = getAccountCurrency(selectedSource[0]);
+
                     TransactionEntity transaction =
                             new TransactionEntity(
                                     amount,
@@ -1402,19 +1477,18 @@ public class MainActivity extends AppCompatActivity {
                                     userId,
                                     selectedSource[0],
                                     "🧾",
-                                    selectedSource[0]
+                                    selectedSource[0],
+                                    currency
                             );
 
-                    transaction.currency =
-                            selectedSource[0].equals("Cash")
-                                    ? getSharedPreferences("settings", MODE_PRIVATE
-                            ).getString("currency", "AMD ֏"
-                            ) : getSharedPreferences("settings", MODE_PRIVATE
-                            ).getString("currency", "AMD ֏");
+                    transaction.currency = currency;
+                    transaction.originalAmount = convertToAMD(amount, currency);
 
                     new Thread(() -> {
                         transactionDao.insert(transaction);
-                        FirebaseFirestore.getInstance()
+
+                        FirebaseFirestore
+                                .getInstance()
                                 .collection("transactions")
                                 .add(transaction);
 
